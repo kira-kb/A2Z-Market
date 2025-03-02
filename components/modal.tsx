@@ -17,7 +17,7 @@ import { Eye } from "lucide-react";
 function Modal({ img, alt }: { img: StaticImageData; alt: string }) {
   return (
     <Dialog>
-      <DialogTrigger className="dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full p-1 h-9 w-9 sm:w-9 sm:h-9 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground flex justify-center items-center">
+      <DialogTrigger className="bg-primary hover:bg-primary/80 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full p-1 h-9 w-9 sm:w-9 sm:h-9 border border-input shadow-sm hover:text-accent-foreground flex justify-center items-center">
         <Eye className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
       </DialogTrigger>
       <DialogContent>

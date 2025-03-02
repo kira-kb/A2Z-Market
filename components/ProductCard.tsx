@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,6 +14,8 @@ import { Minus, Plus, ShoppingBasket } from "lucide-react";
 
 import cartImg from "../assets/images/mobile.png"; // Ensure correct path
 import Modal from "./modal";
+import ImgLoader from "./imgLoader";
+import Link from "next/link";
 
 export default function ProductCard({
   layout = "col",
@@ -38,16 +40,21 @@ export default function ProductCard({
         layout === "col" ? "sm:flex-col" : "sm:flex-row"
       } gap-3 p-4 rounded-2xl shadow-slate-900/5 dark:shadow-none bg-white dark:bg-slate-900`}
     >
-      <div className="relative w-full max-w-64 max-h-72 aspect-square sm:w-auto sm:aspect-auto  overflow-hidden rounded-xl bg-[#f9f4ec] dark:bg-slate-800">
-        <Image
-          src={cartImg}
-          alt="V-Neck Slim Fit T-Shirt"
-          fill={false}
-          style={{ objectFit: "cover" }}
-          className="w-full h-full"
-          sizes="(max-width: 640px) 100vw, 220px"
-        />
-      </div>
+      <Link
+        href="/shop/kira"
+        className="relative w-full max-w-64 max-h-72 aspect-square sm:w-auto sm:aspect-auto  overflow-hidden rounded-xl bg-[#f9f4ec] dark:bg-slate-800"
+      >
+        <Suspense fallback={<ImgLoader />}>
+          <Image
+            src={cartImg}
+            alt="V-Neck Slim Fit T-Shirt"
+            fill={false}
+            style={{ objectFit: "cover" }}
+            className="w-full h-full"
+            sizes="(max-width: 640px) 100vw, 220px"
+          />
+        </Suspense>
+      </Link>
       {/* <div className="flex flex-1 flex-col max-w-96"> */}
       <div className="flex flex-1 flex-col">
         <CardHeader className="p-0 pt-2 sm:pt-0">
