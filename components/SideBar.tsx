@@ -49,7 +49,7 @@ const brands: Option[] = [
 //   { label: "Above $500", value: "above-500" },
 // ];
 
-export function AppSidebar() {
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // State for selected filters.
   // const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   // const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(
@@ -61,7 +61,7 @@ export function AppSidebar() {
   // console.log("path: ** ", router.pathname);
 
   return (
-    <Sidebar title="Filters" className="my-16 z-0">
+    <Sidebar {...props} title="Filters" className="my-16 z-0">
       <SidebarContent>
         {/* Search Filter */}
         <SidebarGroup>

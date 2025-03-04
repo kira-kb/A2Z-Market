@@ -203,7 +203,7 @@ export default function Home() {
       className={`min-h-screen dark:bg-gray-900 dark:text-white bg-gray-100 text-gray-800 pb-12 relative z-0 transition-colors duration-300`}
     >
       {/* Hero Section */}
-      <section className="relative">
+      <section className="relative p-4">
         <div
           className={`absolute inset-0 dark:bg-gradient-to-r dark:from-indigo-800 dark:to-gray-800 bg-gradient-to-r from-purple-600 to-indigo-600 opacity-70 mix-blend-multiply transition-colors duration-300`}
         ></div>
@@ -226,7 +226,7 @@ export default function Home() {
             </button>
           </Link>
         </div>
-        <div className="container flex items-center justify-center mx-auto px-4">
+        <div className="container flex items-stretch justify-center mx-auto px-4 py-6">
           <AppCarousel />
         </div>
       </section>

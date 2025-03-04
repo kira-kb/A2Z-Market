@@ -9,7 +9,7 @@ import CarouselCard from "./CarouselCard";
 
 export function AppCarousel() {
   return (
-    <div className="relative w-full max-w-[60%]">
+    <div className="relative w-full">
       <Carousel>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white text-center my-2">
           New Products

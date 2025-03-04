@@ -78,7 +78,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl text-wrap font-bold text-gray-900 dark:text-white">
               A2Z Market
             </h1>
           </div>
@@ -107,6 +107,9 @@ const Navbar = () => {
             </Link>
             <Link href="/categories" passHref>
               <Button variant="ghost">Categories</Button>
+            </Link>
+            <Link href="/admin" passHref>
+              <Button variant="ghost">admin</Button>
             </Link>
           </div>
 

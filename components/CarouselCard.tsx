@@ -5,7 +5,9 @@ import Image from "next/image";
 import img from "@/assets/images/mobile.png";
 import Link from "next/link";
 
-export default function CarouselCard() {
+export default function CarouselCard({
+  ...props
+}: React.ComponentProps<typeof Card>) {
   const data = [
     {
       id: 1,
@@ -24,9 +26,12 @@ export default function CarouselCard() {
   ];
 
   return (
-    <div className="relative max-w-4xl mx-auto p-4">
+    <div className="relative min-w-[240px] p-4" {...props}>
       {/* Card component */}
-      <Card className="flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow-sm md:flex-row md:max-w-4xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+      <Card
+        {...props}
+        className="flex flex-col items-center bg-white border border-gray-200 rounded-lg shadow-sm md:flex-row md:max-w-4xl hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+      >
         <Image
           className="object-cover w-full rounded-t-lg h-96 md:h-auto md:w-48 md:rounded-none md:rounded-s-lg"
           src={data[0].imgSrc}
