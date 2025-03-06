@@ -5,15 +5,14 @@ import {
   Users,
   Package,
   ShoppingCart,
-  BarChart2,
-  Settings,
+  // BarChart2,
   FileText,
   LayoutDashboard,
-  LogOut,
   Megaphone,
   MessageCircle,
   DollarSign,
   LucideProps,
+  LayersIcon,
 } from "lucide-react";
 
 import {
@@ -46,7 +45,7 @@ interface SidebarItem {
 const adminSidebarItems: SidebarItem[] = [
   {
     name: "Dashboard",
-    path: "/admin/dashboard",
+    path: "/admin",
     icon: <Home size={16} />,
     iconComponent: LayoutDashboard,
   },
@@ -55,6 +54,12 @@ const adminSidebarItems: SidebarItem[] = [
     path: "/admin/users",
     icon: <Users size={16} />,
     iconComponent: Users,
+  },
+  {
+    name: "Categories",
+    path: "/admin/categories",
+    icon: <LayersIcon size={16} />,
+    iconComponent: LayersIcon,
   },
   {
     name: "Products",
@@ -68,12 +73,12 @@ const adminSidebarItems: SidebarItem[] = [
     icon: <ShoppingCart size={16} />,
     iconComponent: ShoppingCart,
   },
-  {
-    name: "Sales",
-    path: "/admin/sales",
-    icon: <BarChart2 size={16} />,
-    iconComponent: DollarSign,
-  },
+  // {
+  //   name: "Sales",
+  //   path: "/admin/sales",
+  //   icon: <BarChart2 size={16} />,
+  //   iconComponent: DollarSign,
+  // },
   {
     name: "Reports",
     path: "/admin/reports",
@@ -115,18 +120,18 @@ const adminSidebarItems: SidebarItem[] = [
       },
     ],
   },
-  {
-    name: "Settings",
-    path: "/admin/settings",
-    icon: <Settings size={16} />,
-    iconComponent: Settings,
-  },
-  {
-    name: "Logout",
-    path: "/logout",
-    icon: <LogOut size={16} />,
-    iconComponent: LogOut,
-  },
+  // {
+  //   name: "Settings",
+  //   path: "/admin/settings",
+  //   icon: <Settings size={16} />,
+  //   iconComponent: Settings,
+  // },
+  // {
+  //   name: "Logout",
+  //   path: "/logout",
+  //   icon: <LogOut size={16} />,
+  //   iconComponent: LogOut,
+  // },
 ];
 
 export function AdminSidebar({
@@ -138,13 +143,13 @@ export function AdminSidebar({
     <Sidebar {...props} title="Admin">
       <SidebarContent>
         <SidebarTrigger />
-        <SidebarMenu>
+        <SidebarMenu className="mb-16">
           {adminSidebarItems.map((item) => (
             <SidebarMenuItem key={item.name}>
               {item.subItems ? (
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value={item.name} className="border-none">
-                    <AccordionTrigger className="flex items-center justify-start hover:bg-gray-700 w-full p-2 rounded-md ">
+                    <AccordionTrigger className="flex items-center justify-start hover:bg-gray-700 hover:text-slate-100 w-full p-2 rounded-md ">
                       {item.icon} <span className="ml-2 mr-2">{item.name}</span>
                     </AccordionTrigger>
                     <AccordionContent className="pl-6 space-y-2">
@@ -152,9 +157,9 @@ export function AdminSidebar({
                         <Link
                           key={subItem.name}
                           href={subItem.path}
-                          className={`flex items-center p-2 rounded-md hover:bg-gray-700 transition-colors ${
+                          className={`flex items-center p-2 rounded-md hover:bg-gray-700  hover:text-slate-100 transition-colors ${
                             pathname === subItem.path
-                              ? "bg-gray-700 font-bold"
+                              ? "bg-gray-700 font-bold text-slate-100"
                               : ""
                           }`}
                         >
@@ -170,8 +175,10 @@ export function AdminSidebar({
               ) : (
                 <Link
                   href={item.path}
-                  className={`flex items-center p-2 rounded-md hover:bg-gray-700 transition-colors ${
-                    pathname === item.path ? "bg-gray-700 font-bold" : ""
+                  className={`flex items-center p-2 rounded-md hover:bg-gray-700 hover:text-slate-100 transition-colors ${
+                    pathname === item.path
+                      ? "bg-gray-700 font-bold text-slate-100"
+                      : ""
                   }`}
                 >
                   {item.icon} <span className="ml-2">{item.name}</span>

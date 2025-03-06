@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import avatarImg from "@/assets/images/avatar_placeholder.png";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import Link from "next/link";
 
 export default function UserMenu() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -41,7 +42,10 @@ export default function UserMenu() {
               kirubelbewket@gmail.com
             </span>
           </div>
-          <DropdownMenuItem>Settings</DropdownMenuItem>
+          <DropdownMenuItem>My Account</DropdownMenuItem>
+          <Link href="/settings">
+            <DropdownMenuItem>Settings</DropdownMenuItem>
+          </Link>
           <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
             Sign out
           </DropdownMenuItem>
