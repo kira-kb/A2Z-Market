@@ -303,7 +303,9 @@ const UserForm = ({
             Role
           </Label>
           <Select
-            onValueChange={setRole}
+            onValueChange={(role) =>
+              role === "admin" ? setRole("admin") : setRole("customer")
+            }
             defaultValue={user?.role || "customer"}
           >
             <SelectTrigger className="col-span-3">

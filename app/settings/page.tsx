@@ -47,9 +47,10 @@ const AccountSettingsPage = () => {
   };
 
   const handleNotificationsChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    name: string,
+    checked: string | boolean
   ) => {
-    const { name, checked } = e.target;
+    // const { name, checked } = e.target;
     setNotifications((prev) => ({ ...prev, [name]: checked }));
   };
 
@@ -142,18 +143,17 @@ const AccountSettingsPage = () => {
                 id="emailNotifications"
                 name="emailNotifications"
                 checked={notifications.emailNotifications}
-                onChange={handleNotificationsChange}
+                onCheckedChange={(checked) =>
+                  handleNotificationsChange("emailNotifications", checked)
+                }
+                // onCheckedChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                //   handleNotificationsChange(e)
+                // }
+                // onChange={handleNotificationsChange}
+                // onChange={(e) => handleNotificationsChange(e)}
+                // onChange={handleNotificationsChange}
               />
               <label htmlFor="emailNotifications">Email Notifications</label>
-            </div>
-            <div className="flex items-center gap-4 mt-4">
-              <Checkbox
-                id="smsNotifications"
-                name="smsNotifications"
-                checked={notifications.smsNotifications}
-                onChange={(e) => handleNotificationsChange(e)}
-              />
-              <label htmlFor="smsNotifications">SMS Notifications</label>
             </div>
           </CardContent>
         </Card>
@@ -168,7 +168,7 @@ const AccountSettingsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Spanish</SelectItem>
+                <SelectItem value="es">Amharic</SelectItem>
                 <SelectItem value="fr">French</SelectItem>
                 <SelectItem value="de">German</SelectItem>
               </SelectContent>
