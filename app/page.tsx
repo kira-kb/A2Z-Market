@@ -6,6 +6,7 @@ import clothes from "@/assets/images/clothings.avif";
 import accessories from "@/assets/images/robotics.avif";
 import shoes from "@/assets/images/shoes.avif";
 import Image from "next/image";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -30,6 +31,7 @@ export default function Home() {
           >
             Explore our curated collection of fashion, accessories, and more.
           </p>
+          
           <Link href="/shop">
             <button
               className={`bg-white text-purple-600 font-semibold px-6 py-3 rounded-full hover:bg-gray-200 transition-colors`}
@@ -130,6 +132,7 @@ export default function Home() {
             Sign up for our newsletter to get exclusive deals and the latest
             updates.
           </p>
+
           {/* <Link href="/newsletter">
             <button className="bg-white text-purple-600 font-semibold px-6 py-3 rounded-full hover:bg-gray-200 transition-colors">
               Subscribe

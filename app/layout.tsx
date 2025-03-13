@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import Footer from "@/components/footer";
 import favIcon from "@/app/favicon.png";
+
 import { Toaster } from "sonner";
 
 const geistSans = Geist({

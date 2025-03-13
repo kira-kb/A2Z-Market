@@ -19,6 +19,7 @@ function Shop() {
     fetchData();
   }, [fetchData]);
 
+  
   return (
     <SidebarProvider>
       <div>
