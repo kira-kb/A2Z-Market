@@ -7,16 +7,13 @@ import Image from "next/image";
 import gen from "@/assets/images/loadding.gif";
 import { useCartStore, useDataStore } from "@/store";
 import LoadingAnimation from "@/app/loading";
+import { useParams } from "next/navigation";
 
-interface ProductDetailsPageProps {
-  params: {
-    id: string;
-  };
-}
-
-const ProductDetailsPage: FC<ProductDetailsPageProps> = ({ params }) => {
+const ProductDetailsPage: FC = () => {
   const { data, fetchData, isLoadding } = useDataStore();
   const { addCartItem } = useCartStore();
+
+  console.log(useParams().id);
 
   const [renderData, setRenderData] = useState<{
     id: string;
@@ -32,17 +29,19 @@ const ProductDetailsPage: FC<ProductDetailsPageProps> = ({ params }) => {
     description: "",
   });
 
+  const id = useParams().id;
+
   useEffect(() => {
     const loadData = async () => {
       await fetchData();
-      const { id } = await params;
+      if (!id) return;
       const product = data.find((item) => +item.id === +id || item.id == id);
       if (product) {
         setRenderData(product);
       }
     };
     loadData();
-  }, [params, data, fetchData]);
+  }, [data, fetchData, id]);
 
   if (isLoadding)
     return (
