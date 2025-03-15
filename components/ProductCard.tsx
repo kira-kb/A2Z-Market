@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +12,7 @@ import {
 import Image from "next/image";
 import { Minus, Plus, ShoppingBasket } from "lucide-react";
 import Modal from "./modal";
-import ImgLoader from "./imgLoader";
+// import ImgLoader from "./imgLoader";
 import Link from "next/link";
 import { useCartStore } from "@/store";
 
@@ -56,18 +56,19 @@ export default function ProductCard({
         href={`/shop/${id}`}
         className="relative w-full max-w-64 max-h-72 aspect-square sm:w-auto sm:aspect-auto overflow-hidden rounded-xl bg-[#f9f4ec] dark:bg-slate-800"
       >
-        <Suspense fallback={<ImgLoader />}>
-          <Image
-            src={image}
-            alt={name || "image"}
-            width={1000000}
-            height={1000000}
-            fill={false}
-            style={{ objectFit: "cover" }}
-            className="w-full h-full"
-            sizes="(max-width: 640px) 100vw, 220px"
-          />
-        </Suspense>
+        {/* <Suspense fallback={<ImgLoader />}> */}
+        <Image
+          src={image}
+          alt={name || "image"}
+          width={1000000}
+          height={1000000}
+          fill={false}
+          style={{ objectFit: "cover" }}
+          // className="max-w[200px] max-h-[220px]"
+          // className="w-full h-full"
+          sizes="(max-width: 640px) 100vw, 220px"
+        />
+        {/* </Suspense> */}
       </Link>
       <div className="flex flex-1 flex-col">
         <CardHeader className="p-0 pt-2 sm:pt-0">
@@ -127,7 +128,6 @@ export default function ProductCard({
     </Card>
   );
 }
-
 
 // "use client";
 

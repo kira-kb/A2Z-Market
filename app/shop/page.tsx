@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 
 import { useDataStore } from "@/store";
 import LoadingAnimation from "../loading";
+// import CategoryFilter from "@/components/subItemSelector";
 
 function Shop() {
   const [flow, setFlow] = useState<"flex" | "grid">("grid");
@@ -19,7 +20,8 @@ function Shop() {
     fetchData();
   }, [fetchData]);
 
-  
+  // return <CategoryFilter />;
+
   return (
     <SidebarProvider>
       <div>
@@ -54,7 +56,7 @@ function Shop() {
           <div
             className={`p-4 gap-3 grid ${
               flow === "grid"
-                ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                ? "grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
                 : "flex flex-col flex-wrap"
             }`}
           >

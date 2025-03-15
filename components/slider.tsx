@@ -10,12 +10,16 @@ export function DoubleSlider({
   min,
   max,
   step = 10,
+  values,
+  setValues,
 }: {
   min: number;
   max: number;
   step?: number;
+  values: [number, number];
+  setValues: (values: [number, number]) => void;
 }) {
-  const [values, setValues] = useState<[number, number]>([min, max]);
+  // const [values, setValues] = useState<[number, number]>([min, max]);
   const [hoveringThumb, setHoveringThumb] = useState<string | null>(null);
 
   const handleValueChange = (newValues: [number, number]) => {

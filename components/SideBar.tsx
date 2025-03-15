@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,28 +10,45 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from "./ui/sidebar";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "./ui/select";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
 import { DoubleSlider } from "./slider";
 import MultipleSelector, { Option } from "./ui/multiple-selector";
-// import { useRouter } from "next/router";
+import { useState } from "react";
+import CategoryFilter from "./categoryFilter";
+import { useRouter, useSearchParams } from "next/navigation";
+
+interface ICategory {
+  category: string;
+  subCategory: string;
+  types: string[];
+}
 
 // Example filter categories.
 const categories = [
-  { title: "Electronics", value: "electronics" },
-  { title: "Clothing", value: "clothing" },
-  { title: "Home Appliances", value: "home-appliances" },
-  { title: "Books", value: "books" },
-  { title: "Sports", value: "sports" },
+  {
+    label: "clothing",
+    type: ["mens", "womens", "unsexy"],
+    subCategories: [
+      "top wears",
+      "bottom wears",
+      "underwears",
+      "dress",
+      "skirt",
+    ],
+  },
+  {
+    label: "mobiles",
+    type: ["button", "smart"],
+  },
+  {
+    label: "laptop",
+    type: ["gaming", "office", "budget"],
+    subCategories: ["hp", "toshiba", "dell", "vivo", "microsoft", "acer"],
+  },
+  {
+    label: "books",
+  },
 ];
 
 const brands: Option[] = [
@@ -42,23 +59,41 @@ const brands: Option[] = [
   { label: "Blu", value: "Blu" },
 ];
 
-// const priceRanges = [
-//   { label: "Under $50", value: "under-50" },
-//   { label: "$50 - $100", value: "50-100" },
-//   { label: "$100 - $500", value: "100-500" },
-//   { label: "Above $500", value: "above-500" },
-// ];
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  // State for selected filters.
-  // const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  // const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(
-  //   null
-  // );
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<ICategory>({
+    category: "",
+    subCategory: "",
+    types: [],
+  });
+  const [selector, setSelector] = useState<string[]>([]);
+  const [radio, setRadio] = useState("");
+  const [slider, setSlider] = useState<[number, number]>([10, 1000]);
 
-  // const router = useRouter();
+  // const queryParams = `?query=${search}&category=${
+  //   category.category
+  // }&subCategory=${category.subCategory}&types=${category.types.join(
+  //   ","
+  // )}&price=${slider.join(",")}&brands=${selector.join(",")}&condition=${radio}`;
 
-  // console.log("path: ** ", router.pathname);
+  const queryParams = `?${search ? `query=${search}&` : ""}${
+    category.category ? `category=${category.category}&` : ""
+  }${category.subCategory ? `subCategory=${category.subCategory}&` : ""}${
+    category.types.length ? `types=${category.types.join(",")}&` : ""
+  }${slider.length ? `price=${slider.join(",")}&` : ""}${
+    selector.length ? `brands=${selector.join(",")}&` : ""
+  }${radio ? `condition=${radio}` : ""}`.slice(0, -1);
+
+  const router = useRouter();
+
+  // console.log("queryParams: ", queryParams);
+  // const queryString =
+  useSearchParams().forEach((q) => console.log(q));
+  // console.log("queryString: **  ", queryString);
+
+  const handleFiltterClick = () => {
+    router.push(queryParams);
+  };
 
   return (
     <Sidebar {...props} title="Filters" className="my-16 z-0">
@@ -70,12 +105,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <div className="flex items-center p-2">
-                  <Search className="mr-2" />
                   <input
                     type="text"
                     placeholder="Search products..."
                     className="w-full p-2 border border-gray-300 rounded"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
+                  <div
+                    className="ml-2 bg-blue-500 text-white border-blue-600 border-[1px] p-1 rounded cursor-pointer"
+                    title="Click to Filter"
+                    onClick={handleFiltterClick}
+                  >
+                    <SlidersHorizontal />
+                  </div>
                 </div>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -84,11 +127,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
         {/* Filter by Category */}
         <SidebarGroup>
-          <SidebarGroupLabel>Categories</SidebarGroupLabel>
+          {/* <SidebarGroupLabel>Categories</SidebarGroupLabel> */}
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <Select>
+                <CategoryFilter
+                  categories={categories}
+                  category={category}
+                  setCategories={setCategory}
+                />
+                {/* <Select value={category} onValueChange={(e) => setCategory(e)}>
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Choose Category" />
                   </SelectTrigger>
@@ -105,8 +153,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       ))}
                     </SelectGroup>
                   </SelectContent>
-                </Select>
+                </Select> */}
               </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Filter by Brands */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Brands</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <div className="w-full">
+                <MultipleSelector
+                  defaultOptions={brands}
+                  placeholder="Select Brands..."
+                  onChange={(e) => setSelector(e.map((item) => item.value))}
+                  // emptyIndicator={
+                  //   <p className="text-center text-sm py-0 text-gray-600 dark:text-gray-400">
+                  //     ...
+                  //   </p>
+                  // }
+                />
+              </div>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -116,7 +185,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarGroupLabel>Price Range</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <DoubleSlider min={10} max={1000} step={10} />
+              <DoubleSlider
+                min={10}
+                max={1000}
+                step={10}
+                values={slider}
+                setValues={setSlider}
+              />
               {/* <RadioGroup defaultValue="comfortable">
                 {priceRanges.map((range, i) => (
                   <SidebarMenuItem key={range.value}>
@@ -133,26 +208,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Filter by Brands */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Brands</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <div className="w-full">
-                <MultipleSelector
-                  defaultOptions={brands}
-                  placeholder="Select Brands..."
-                  // emptyIndicator={
-                  //   <p className="text-center text-sm py-0 text-gray-600 dark:text-gray-400">
-                  //     ...
-                  //   </p>
-                  // }
-                />
-              </div>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
         {/* Filter by Condition */}
         <SidebarGroup className="mb-20">
           <SidebarGroupLabel>Condition</SidebarGroupLabel>
@@ -160,18 +215,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu>
               <SidebarMenuItem>
                 <div>
-                  <RadioGroup defaultValue="comfortable">
+                  <RadioGroup
+                    defaultValue="comfortable"
+                    value={radio}
+                    onValueChange={(e) => setRadio(e)}
+                  >
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="default" id="r1" />
-                      <Label htmlFor="r1">Brand new</Label>
+                      <RadioGroupItem value="" id="r1" />
+                      <Label htmlFor="r1">All</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="comfortable" id="r2" />
-                      <Label htmlFor="r2">Refubrished</Label>
+                      <RadioGroupItem value="new" id="r2" />
+                      <Label htmlFor="r2">Brand new</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="compact" id="r3" />
-                      <Label htmlFor="r3">Used</Label>
+                      <RadioGroupItem value="Refubrished" id="r3" />
+                      <Label htmlFor="r3">Refubrished</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="used" id="r4" />
+                      <Label htmlFor="r4">Used</Label>
                     </div>
                   </RadioGroup>
                 </div>

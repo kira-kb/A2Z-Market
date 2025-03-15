@@ -19,18 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-type CartItem = {
-  id: number;
-  name: string;
-  price: number;
-  quantity: number;
-};
-
-const cartItems: CartItem[] = [
-  { id: 1, name: "T-Shirt (Men's)", price: 20, quantity: 2 },
-  { id: 2, name: "Sneakers (Women's)", price: 50, quantity: 1 },
-];
+import { useCartStore } from "@/store";
+import Link from "next/link";
 
 const CheckoutPage = () => {
   const [shippingInfo, setShippingInfo] = useState({
@@ -43,10 +33,7 @@ const CheckoutPage = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState("");
 
-  const totalPrice = cartItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0
-  );
+  const { cartItems, totalPrice } = useCartStore();
 
   const handleShippingInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
@@ -139,9 +126,13 @@ const CheckoutPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cartItems.map((item) => (
+                {cartItems.map((item, i) => (
                   <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
+                    <TableCell>
+                      <Link href={`/shop/${item.id}`}>
+                        {i + 1} &nbsp;{item.name}
+                      </Link>
+                    </TableCell>
                     <TableCell>${item.price}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
                     <TableCell>${item.price * item.quantity}</TableCell>
@@ -151,7 +142,7 @@ const CheckoutPage = () => {
             </Table>
             <div className="flex justify-between mt-4">
               <span className="text-lg font-semibold">Total:</span>
-              <span className="text-lg font-semibold">${totalPrice}</span>
+              <span className="text-lg font-semibold">${totalPrice()}</span>
             </div>
             <Button className="mt-6 w-full" onClick={handleSubmitOrder}>
               Place Order
