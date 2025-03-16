@@ -1,6 +1,4 @@
 import { create } from "zustand";
-
-// import tool from "@/assets/images/robotics.avif";
 import { toast } from "sonner";
 
 interface ICartItem {
@@ -31,27 +29,22 @@ interface IDataItem {
 
 interface IData {
   data: IDataItem[];
+  latestProducts: IDataItem[];
+  trendingItems: IDataItem[];
+  categories: {
+    label: string;
+    type?: string[];
+    subCategories?: string[];
+    brands?: { label: string; value: string }[];
+    condition?: string[];
+    image?: string;
+  }[];
   fetchData: () => void;
   isLoadding: boolean;
 }
 
 export const useCartStore = create<ICart>((set, get) => ({
-  cartItems: [
-    // {
-    //   id: "1",
-    //   name: "Item 1",
-    //   price: 10,
-    //   quantity: 1,
-    //   image: tool.src, // Replace with actual image path
-    // },
-    // {
-    //   id: "2",
-    //   name: "Item 2",
-    //   price: 15,
-    //   quantity: 2,
-    //   image: tool.src, // Replace with actual image path
-    // },
-  ],
+  cartItems: [],
   addCartItem: (item) => {
     set((state) => {
       const existingItem = state.cartItems.find((data) => data.id === item.id);
@@ -107,13 +100,63 @@ export const useCartStore = create<ICart>((set, get) => ({
 
 export const useDataStore = create<IData>((set) => ({
   data: [],
+  latestProducts: [],
+  trendingItems: [],
+  categories: [
+    {
+      label: "clothing",
+      type: ["mens", "womens", "unsexy"],
+      subCategories: [
+        "top wears",
+        "bottom wears",
+        "underwears",
+        "dress",
+        "skirt",
+      ],
+      brands: [
+        { label: "Nike", value: "Nike" },
+        { label: "Adidas", value: "Adidas" },
+        { label: "Crux", value: "Crux" },
+      ],
+    },
+    {
+      label: "mobiles",
+      type: ["button", "smart"],
+      brands: [
+        { label: "Apple", value: "Apple" },
+        { label: "Samsung", value: "Samsung" },
+        { label: "Techno", value: "Techno" },
+        { label: "Motorolla", value: "Motorolla" },
+        { label: "Blu", value: "Blu" },
+      ],
+      condition: ["new", "refurbished", "used"],
+    },
+    {
+      label: "laptop",
+      type: ["gaming", "office", "budget"],
+      brands: [
+        { label: "Hp", value: "Hp" },
+        { label: "Toshiba", value: "Toshiba" },
+        { label: "Dell", value: "Dell" },
+        { label: "Vivo", value: "Vivo" },
+        { label: "Microsoft", value: "Microsoft" },
+        { label: "Acer", value: "Acer" },
+      ],
+      condition: ["new", "refurbished", "used"],
+    },
+    {
+      label: "books",
+    },
+  ],
   isLoadding: true,
   fetchData: async () => {
     const response = await fetch("https://fakestoreapi.com/products");
-    const data = await response.json();
-
-    set({ data, isLoadding: false }); // Updates the store with the fetched data
+    const data: IDataItem[] = await response.json();
+    set({
+      data,
+      latestProducts: data.slice(0, 5),
+      trendingItems: data.slice(5),
+      isLoadding: false,
+    });
   },
 }));
-
-// 15.1.7

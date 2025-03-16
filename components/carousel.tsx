@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Carousel,
   CarouselContent,
@@ -6,8 +8,19 @@ import {
   CarouselItem,
 } from "@/components/ui/carousel";
 import CarouselCard from "./CarouselCard";
+import { useEffect } from "react";
+import { useDataStore } from "@/store";
+import LoadingAnimation from "@/app/loading";
 
 export function AppCarousel() {
+  const { latestProducts, isLoadding, fetchData } = useDataStore();
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (isLoadding) return <LoadingAnimation />;
+
   return (
     <div className="relative w-[80%]">
       <Carousel>
@@ -15,7 +28,13 @@ export function AppCarousel() {
           New Products
         </h2>
         <CarouselContent>
-          <CarouselItem className="p-4">
+          {latestProducts.map((item) => (
+            <CarouselItem key={item.id} className="p-4">
+              <CarouselCard data={item} />
+            </CarouselItem>
+          ))}
+
+          {/* <CarouselItem className="p-4">
             <CarouselCard />
           </CarouselItem>
           <CarouselItem className="p-4">
@@ -23,10 +42,7 @@ export function AppCarousel() {
           </CarouselItem>
           <CarouselItem className="p-4">
             <CarouselCard />
-          </CarouselItem>
-          <CarouselItem className="p-4">
-            <CarouselCard />
-          </CarouselItem>
+          </CarouselItem> */}
         </CarouselContent>
         <CarouselNavigation alwaysShow />
         <CarouselIndicator />

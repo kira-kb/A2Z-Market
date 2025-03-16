@@ -17,8 +17,8 @@ function Shop() {
   const { data, isLoadding, fetchData } = useDataStore();
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!data) fetchData();
+  }, [fetchData, data]);
 
   // return <CategoryFilter />;
 
