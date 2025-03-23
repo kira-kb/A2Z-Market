@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -12,21 +12,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserButton } from "@clerk/nextjs";
 
 const AccountSettingsPage = () => {
-  // Profile Information State
-  const [profileInfo, setProfileInfo] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  // // Profile Information State
+  // const [profileInfo, setProfileInfo] = useState({
+  //   name: "",
+  //   email: "",
+  //   phone: "",
+  // });
 
-  // Password Change State
-  const [passwords, setPasswords] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
+  // // Password Change State
+  // const [passwords, setPasswords] = useState({
+  //   currentPassword: "",
+  //   newPassword: "",
+  //   confirmPassword: "",
+  // });
 
   // Notification Preferences State
   const [notifications, setNotifications] = useState({
@@ -38,13 +39,13 @@ const AccountSettingsPage = () => {
   const [language, setLanguage] = useState("en");
 
   // Handlers
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProfileInfo({ ...profileInfo, [e.target.name]: e.target.value });
-  };
+  // const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setProfileInfo({ ...profileInfo, [e.target.name]: e.target.value });
+  // };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswords({ ...passwords, [e.target.name]: e.target.value });
-  };
+  // const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setPasswords({ ...passwords, [e.target.name]: e.target.value });
+  // };
 
   const handleNotificationsChange = (
     name: string,
@@ -54,15 +55,15 @@ const AccountSettingsPage = () => {
     setNotifications((prev) => ({ ...prev, [name]: checked }));
   };
 
-  const handleProfileUpdate = () => {
-    // Submit profile changes
-    console.log("Profile Updated", profileInfo);
-  };
+  // const handleProfileUpdate = () => {
+  //   // Submit profile changes
+  //   console.log("Profile Updated", profileInfo);
+  // };
 
-  const handlePasswordUpdate = () => {
-    // Submit password changes
-    console.log("Password Updated", passwords);
-  };
+  // const handlePasswordUpdate = () => {
+  //   // Submit password changes
+  //   console.log("Password Updated", passwords);
+  // };
 
   return (
     <div className="container mx-auto p-4">
@@ -70,7 +71,7 @@ const AccountSettingsPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Profile Information */}
-        <Card>
+        {/* <Card>
           <CardContent>
             <h2 className="text-xl font-semibold mb-4">Profile Information</h2>
             <div className="flex flex-col gap-4">
@@ -97,10 +98,10 @@ const AccountSettingsPage = () => {
               Update Profile
             </Button>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Change Password */}
-        <Card>
+        {/* <Card>
           <CardContent>
             <h2 className="text-xl font-semibold mb-4">Change Password</h2>
             <div className="flex flex-col gap-4">
@@ -129,6 +130,15 @@ const AccountSettingsPage = () => {
             <Button className="mt-4" onClick={handlePasswordUpdate}>
               Update Password
             </Button>
+          </CardContent>
+        </Card> */}
+
+        <Card>
+          <CardContent>
+            <h2 className="text-xl font-semibold mb-4">
+              Click the profile button to manage your account
+            </h2>
+            <UserButton />
           </CardContent>
         </Card>
 
@@ -168,7 +178,7 @@ const AccountSettingsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
-                <SelectItem value="es">Amharic</SelectItem>
+                <SelectItem value="et">Amharic</SelectItem>
                 <SelectItem value="fr">French</SelectItem>
                 <SelectItem value="de">German</SelectItem>
               </SelectContent>

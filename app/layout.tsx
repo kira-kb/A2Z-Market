@@ -6,6 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import Footer from "@/components/footer";
 import favIcon from "@/app/favicon.png";
 
+import { ClerkProvider } from "@clerk/nextjs";
+
 import { Toaster } from "sonner";
 
 const geistSans = Geist({
@@ -32,22 +34,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Toaster richColors position="top-center" />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         >
-          <Navbar />
-          <main className="mt-16">{children}</main>
-          <Footer />
-        </ThemeProvider>
-      </body>
-    </html>
+          <Toaster richColors position="top-center" />
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navbar />
+            <main className="mt-16">{children}</main>
+            <Footer />
+          </ThemeProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

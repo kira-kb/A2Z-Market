@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { ThemeButton } from "./ThemeButton";
 import Image from "next/image";
 import Link from "next/link";
@@ -17,10 +17,14 @@ import Link from "next/link";
 // import siga from "@/assets/images/kurt.jpg";
 import UserMenu from "./userMenu";
 import { useCartStore } from "@/store";
+import ImgLoader from "./imgLoader";
+import { useUser } from "@clerk/nextjs";
 
 const Navbar = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   // const [searchQuery, setSearchQuery] = useState("");
+
+  // const [authStat, setAuthStat] = useState(false);
 
   const {
     cartItems,
@@ -28,8 +32,9 @@ const Navbar = () => {
     increaseQuantity: incrementQuantity,
     decreaseQuantity: decrementQuantity,
     removeCartItem: removeItem,
-    // addCartItem: addToCart,
   } = useCartStore();
+
+  const user = useUser();
 
   return (
     <nav
@@ -40,9 +45,11 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-xl text-wrap font-bold text-gray-900 dark:text-white">
-              A2Z Market
-            </h1>
+            <Link href="/">
+              <h1 className="text-xl text-wrap font-bold text-gray-900 dark:text-white">
+                A2Z Market
+              </h1>
+            </Link>
           </div>
 
           {/* Search Input - Desktop */}
@@ -70,9 +77,14 @@ const Navbar = () => {
             <Link href="/categories" passHref>
               <Button variant="ghost">Categories</Button>
             </Link>
-            <Link href="/admin" passHref>
-              <Button variant="ghost">admin</Button>
-            </Link>
+            {user.user?.emailAddresses[0]?.emailAddress ===
+            "kirubelbewket@gmail.com" ? (
+              <Link href="/admin" passHref>
+                <Button variant="ghost">admin</Button>
+              </Link>
+            ) : (
+              ""
+            )}
           </div>
 
           {/* Cart with Popover */}
@@ -167,7 +179,11 @@ const Navbar = () => {
 
             <ThemeButton />
 
-            <UserMenu />
+            {/* <ImgLoader /> */}
+
+            <Suspense fallback={<ImgLoader />}>
+              <UserMenu />
+            </Suspense>
           </div>
 
           {/* Mobile Menu Button */}
