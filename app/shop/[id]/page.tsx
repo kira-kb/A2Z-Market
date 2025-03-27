@@ -19,13 +19,13 @@ const ProductDetailsPage: FC = () => {
     id: string;
     title: string;
     price: number;
-    image: string;
+    image: string[];
     description: string;
   }>({
     id: "",
     title: "",
     price: 0,
-    image: "",
+    image: [],
     description: "",
   });
 
@@ -57,7 +57,7 @@ const ProductDetailsPage: FC = () => {
         <div className="flex flex-col items-center justify-center space-y-4 md:min-h-[300px]">
           <div className="flex-1 flex items-center justify-center">
             <Image
-              src={renderData.image || gen}
+              src={renderData.image[0] || gen}
               alt={renderData.title}
               width={300}
               height={400}
@@ -67,21 +67,21 @@ const ProductDetailsPage: FC = () => {
 
           <div className="flex space-x-2">
             <Image
-              src={renderData.image || gen}
+              src={renderData.image[0] || gen}
               alt={renderData.title}
               width={60}
               height={60}
               className="rounded-md border"
             />
             <Image
-              src={renderData.image || gen}
+              src={renderData.image[0] || gen}
               alt={renderData.title}
               width={60}
               height={60}
               className="rounded-md border"
             />
             <Image
-              src={renderData.image || gen}
+              src={renderData.image[0] || gen}
               alt={renderData.title}
               width={60}
               height={60}
@@ -115,7 +115,7 @@ const ProductDetailsPage: FC = () => {
                 id: renderData.id,
                 name: renderData.title,
                 price: renderData.price,
-                image: renderData.image,
+                image: renderData.image[0],
                 quantity: 1,
               })
             }

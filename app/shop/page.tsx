@@ -68,7 +68,7 @@ function Shop() {
                 id={item.id}
                 price={item.price}
                 description={item.description}
-                image={item.image}
+                image={item.image[0]}
               />
             ))}
           </div>
