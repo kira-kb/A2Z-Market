@@ -16,9 +16,10 @@ export default clerkMiddleware(async (auth, req) => {
     const user = await users.getUser(userId);
 
     if (user?.emailAddresses[0]?.emailAddress !== "kirubelbewket@gmail.com") {
-      return NextResponse.redirect(new URL("/404", req.url));
+      return NextResponse.redirect(new URL("/not-found", req.url));
     }
   }
+
   return NextResponse.next();
 });
 

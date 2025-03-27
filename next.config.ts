@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         // pathname: '/account123/**',
         // search: '',
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
     ],
   },
 };

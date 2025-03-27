@@ -17,7 +17,7 @@ import MultipleSelector from "./ui/multiple-selector";
 import { useState } from "react";
 import CategoryFilter from "./categoryFilter";
 import { useRouter } from "next/navigation";
-import { useDataStore } from "@/store";
+import { useCategoryStore } from "@/store";
 
 interface ICategory {
   category: string;
@@ -79,7 +79,7 @@ interface ICategory {
 // ];
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { categories } = useDataStore();
+  const { categories } = useCategoryStore();
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<ICategory>({

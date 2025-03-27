@@ -34,6 +34,8 @@ export default function CarouselCard({
   //   },
   // ];
 
+  // console.log(data);
+
   return (
     <div className="relative min-w-[240px] p-4" {...props}>
       {/* Card component */}

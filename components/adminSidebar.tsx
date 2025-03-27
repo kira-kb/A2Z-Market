@@ -6,11 +6,11 @@ import {
   Package,
   ShoppingCart,
   // BarChart2,
-  FileText,
+  // FileText,
   LayoutDashboard,
-  Megaphone,
-  MessageCircle,
-  DollarSign,
+  // Megaphone,
+  // MessageCircle,
+  // DollarSign,
   LucideProps,
   LayersIcon,
 } from "lucide-react";
@@ -79,47 +79,47 @@ const adminSidebarItems: SidebarItem[] = [
   //   icon: <BarChart2 size={16} />,
   //   iconComponent: DollarSign,
   // },
-  {
-    name: "Reports",
-    path: "/admin/reports",
-    icon: <FileText size={16} />,
-    iconComponent: FileText,
-    subItems: [
-      {
-        name: "Sales Report",
-        path: "/admin/reports/sales",
-        iconComponent: DollarSign,
-      },
-      {
-        name: "User Report",
-        path: "/admin/reports/users",
-        iconComponent: Users,
-      },
-      {
-        name: "Product Report",
-        path: "/admin/reports/products",
-        iconComponent: Package,
-      },
-    ],
-  },
-  {
-    name: "Communication",
-    path: "/admin/communication",
-    icon: <Megaphone size={16} />,
-    iconComponent: Megaphone,
-    subItems: [
-      {
-        name: "News",
-        path: "/admin/communication/news",
-        iconComponent: MessageCircle,
-      },
-      {
-        name: "Notifications",
-        path: "/admin/communication/notifications",
-        iconComponent: MessageCircle,
-      },
-    ],
-  },
+  // {
+  //   name: "Reports",
+  //   path: "/admin/reports",
+  //   icon: <FileText size={16} />,
+  //   iconComponent: FileText,
+  //   subItems: [
+  //     {
+  //       name: "Sales Report",
+  //       path: "/admin/reports/sales",
+  //       iconComponent: DollarSign,
+  //     },
+  //     {
+  //       name: "User Report",
+  //       path: "/admin/reports/users",
+  //       iconComponent: Users,
+  //     },
+  //     {
+  //       name: "Product Report",
+  //       path: "/admin/reports/products",
+  //       iconComponent: Package,
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: "Communication",
+  //   path: "/admin/communication",
+  //   icon: <Megaphone size={16} />,
+  //   iconComponent: Megaphone,
+  //   subItems: [
+  //     {
+  //       name: "News",
+  //       path: "/admin/communication/news",
+  //       iconComponent: MessageCircle,
+  //     },
+  //     {
+  //       name: "Notifications",
+  //       path: "/admin/communication/notifications",
+  //       iconComponent: MessageCircle,
+  //     },
+  //   ],
+  // },
   // {
   //   name: "Settings",
   //   path: "/admin/settings",
