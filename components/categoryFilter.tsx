@@ -8,7 +8,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ICategories {
-  label: string;
+  name: string;
   type?: string[];
   subCategories?: string[];
 }
@@ -40,7 +40,7 @@ const CategoryFilter: FC<ICategoryFilter> = ({
   };
 
   const selectedCategoryData = categories.find(
-    (cat) => cat.label === category.category
+    (cat) => cat.name === category.category
   );
 
   return (
@@ -58,8 +58,8 @@ const CategoryFilter: FC<ICategoryFilter> = ({
           </SelectTrigger>
           <SelectContent>
             {categories.map((category) => (
-              <SelectItem key={category.label} value={category.label}>
-                {category.label}
+              <SelectItem key={category.name} value={category.name}>
+                {category.name}
               </SelectItem>
             ))}
           </SelectContent>
