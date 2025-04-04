@@ -1,6 +1,7 @@
 "use client";
 
 import AdminSidebar from "@/components/adminSidebar";
+import ProductForm from "./productForm";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Card,
@@ -18,84 +19,108 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
+  // DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+// import { Label } from "@/components/ui/label";
+// import {
+//   Select,
+//   SelectContent,
+//   SelectItem,
+//   SelectTrigger,
+//   SelectValue,
+// } from "@/components/ui/select";
 import { toast, Toaster } from "sonner";
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   category: string;
   price: number;
   stock: number;
   description: string;
-  imageUrls: string[]; // Changed to array of image URLs
-  // imageUrls: StaticImageData[]; // Changed to array of image URLs
+  imageUrls: string[];
+  subCategory: string;
+  types: string;
+  brands: string;
+  condition: string;
 }
 
 import pic from "@/assets/images/cosmotics.png";
 import pic2 from "@/assets/images/robotics.avif";
 import Image from "next/image";
+import EditProductForm from "./editProductForm";
 
 const initialProducts: Product[] = [
   {
-    id: 1,
+    id: "1",
     name: "Product A",
     category: "Electronics",
+    subCategory: "Electronics",
+    brands: "Electronics",
+    types: "Electronics",
+    condition: "Electronics",
     price: 199.99,
     stock: 50,
     description: "This is product A description.",
-    imageUrls: [pic.src, pic2.src], // Changed to array
+    imageUrls: [pic.src, pic2.src, pic.src, pic2.src], // Changed to array
   },
   {
-    id: 2,
+    id: "2",
     name: "Product B",
     category: "Clothing",
+    subCategory: "Clothing",
+    brands: "Clothing",
+    types: "Clothing",
+    condition: "Clothing",
     price: 49.99,
     stock: 100,
     description: "This is product B description.",
     imageUrls: [pic2.src, pic.src], // Changed to array
   },
   {
-    id: 3,
+    id: "3",
     name: "Product C",
     category: "Home",
+    subCategory: "Home",
+    brands: "Home",
+    types: "Home",
+    condition: "Home",
     price: 79.99,
     stock: 25,
     description: "This is product C description.",
     imageUrls: [pic2.src, pic.src], // Changed to array
   },
   {
-    id: 4,
+    id: "4",
     name: "Product D",
     category: "Electronics",
+    subCategory: "Electronics",
+    brands: "Electronics",
+    types: "Electronics",
+    condition: "Electronics",
     price: 299.99,
     stock: 30,
     description: "This is product D description.",
     imageUrls: [pic2.src, pic.src], // Changed to array
   },
   {
-    id: 5,
+    id: "5",
     name: "Product E",
     category: "Books",
+    subCategory: "Books",
+    brands: "Books",
+    types: "Books",
+    condition: "Books",
     price: 19.99,
     stock: 75,
     description: "This is product E description.",
@@ -111,39 +136,47 @@ function AdminProductsPage() {
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
 
+  const [currentProductId, setCurrentProductId] = useState<string | null>(null);
+
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddProduct = (product: Product) => {
-    setProducts([...products, { ...product, id: products.length + 1 }]);
-    toast.success("Product added successfully.");
-  };
+  // const handleAddProduct = (product: Product) => {
+  //   setProducts([...products, { ...product, id: `${products.length + 1}` }]);
+  //   toast.success("Product added successfully.");
+  // };
 
   const handleEditProduct = (product: Product) => {
     setEditProduct(product);
     setOpen(true);
   };
 
-  const handleDeleteProduct = (productId: number) => {
+  const handleDeleteProduct = (productId: string) => {
     setProducts(products.filter((product) => product.id !== productId));
     toast.success("Product deleted successfully.");
   };
 
-  const handleUpdateProduct = (updatedProduct: Product) => {
-    setProducts(
-      products.map((product) =>
-        product.id === updatedProduct.id
-          ? { ...product, ...updatedProduct }
-          : product
-      )
-    );
-    setOpen(false);
-    toast.success("Product updated successfully.");
-  };
+  // const handleUpdateProduct = (updatedProduct: Product) => {
+  //   setProducts(
+  //     products.map((product) =>
+  //       product.id === updatedProduct.id
+  //         ? { ...product, ...updatedProduct }
+  //         : product
+  //     )
+  //   );
+  //   setOpen(false);
+  //   toast.success("Product updated successfully.");
+  // };
 
-  const handleImageClick = (image: string) => {
+  // const handleImageClick = (image: string) => {
+  //   setCurrentImage(image);
+  //   setOpenImageDialog(true);
+  // };
+
+  const handleImageClick = (image: string, productId: string) => {
     setCurrentImage(image);
+    setCurrentProductId(productId);
     setOpenImageDialog(true);
   };
 
@@ -162,10 +195,11 @@ function AdminProductsPage() {
               open={open}
               onOpenChange={setOpen}
               product={editProduct}
-              onAddProduct={handleAddProduct}
-              onUpdateProduct={handleUpdateProduct}
-              handleImageClick={handleImageClick}
-              setOpenImageDialog={setOpenImageDialog}
+              setEditProduct={setEditProduct}
+              // onAddProduct={handleAddProduct}
+              // onUpdateProduct={handleUpdateProduct}
+              // handleImageClick={handleImageClick}
+              // setOpenImageDialog={setOpenImageDialog}
             />
           </div>
 
@@ -191,12 +225,15 @@ function AdminProductsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead>NO</TableHead>
                     <TableHead>Image</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Price</TableHead>
-                    <TableHead>Stock</TableHead>
+                    <TableHead>Sub-Category</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>brand</TableHead>
+                    <TableHead>condition</TableHead>
+                    <TableHead>price</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -208,6 +245,16 @@ function AdminProductsPage() {
                       </TableCell>
                       <TableCell>
                         {product.imageUrls.length > 0 && (
+                          // <Image
+                          //   width={100}
+                          //   height={100}
+                          //   src={product.imageUrls[0]} // Display the first image
+                          //   alt={product.name}
+                          //   className="w-12 h-12 object-cover rounded-md cursor-pointer"
+                          //   onClick={() =>
+                          //     handleImageClick(product.imageUrls[0])
+                          //   }
+                          // />
                           <Image
                             width={100}
                             height={100}
@@ -215,33 +262,38 @@ function AdminProductsPage() {
                             alt={product.name}
                             className="w-12 h-12 object-cover rounded-md cursor-pointer"
                             onClick={() =>
-                              handleImageClick(product.imageUrls[0])
+                              handleImageClick(product.imageUrls[0], product.id)
                             }
                           />
                         )}
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.category}</TableCell>
-                      <TableCell>${product.price.toFixed(2)}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>{product.category}</TableCell>
+                      <TableCell>{product.category}</TableCell>
                       <TableCell>{product.stock}</TableCell>
+                      <TableCell className="text-green-700 dark:text-green-400 font-bold">
+                        ${product.price.toFixed(2)}
+                      </TableCell>
                       <TableCell className="text-right">
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleEditProduct(product)}
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-4 w-4 text-orange-600 dark:text-orange-500" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleDeleteProduct(product.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 text-red-700 dark:text-red-400" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        {/* <Button variant="ghost" size="icon">
                           <Eye className="h-4 w-4" />
-                        </Button>
+                        </Button> */}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -251,274 +303,140 @@ function AdminProductsPage() {
           </Card>
         </div>
       </div>
-      <ImageDialog
+      {/* <ImageDialog
         open={openImageDialog}
         onOpenChange={setOpenImageDialog}
         image={currentImage}
+      /> */}
+      <ImageDialog
+        open={openImageDialog}
+        onOpenChange={setOpenImageDialog}
+        images={
+          filteredProducts.find((p) => p.id === currentProductId)?.imageUrls ||
+          null
+        }
+        currentImage={currentImage}
+        setCurrentImage={setCurrentImage}
       />
     </SidebarProvider>
   );
 }
 
+// ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+// ???????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+
 interface ProductDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   product: Product | null;
-  onAddProduct: (product: Product) => void;
-  onUpdateProduct: (product: Product) => void;
-  handleImageClick: (image: string) => void;
-  setOpenImageDialog: (isOpen: boolean) => void;
+  setEditProduct: (product: Product | null) => void;
 }
 
 const ProductDialog = ({
   open,
   onOpenChange,
   product,
-  onAddProduct,
-  onUpdateProduct,
-  handleImageClick,
-  setOpenImageDialog,
+  setEditProduct,
 }: ProductDialogProps) => {
+  // console.log("product **  ", product);
+  // console.log("open **  ", open);
+  // if (!open) product = null;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
-        <Button className="flex items-center" onClick={() => (product = null)}>
+        <Button
+          className="flex items-center"
+          onClick={() => setEditProduct(null)}
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Product
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{product ? "Edit Product" : "Add Product"}</DialogTitle>
-          <DialogDescription>
-            {product
-              ? "Make changes to your product here."
-              : "Add a new product to your system."}
-          </DialogDescription>
-        </DialogHeader>
-        <ProductForm
-          product={product}
-          onAddProduct={onAddProduct}
-          onUpdateProduct={onUpdateProduct}
-          onOpenChange={onOpenChange}
-          handleImageClick={handleImageClick}
-          setOpenImageDialog={setOpenImageDialog}
-        />
+      <DialogContent className="max-w-3xl">
+        {product ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Edit Product</DialogTitle>
+              <DialogDescription>
+                Make changes to your product here.{" "}
+              </DialogDescription>
+            </DialogHeader>
+            <EditProductForm
+              product={product}
+              onSubmit={(e) => console.log(e)}
+            />
+          </>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Add Product</DialogTitle>
+              <DialogDescription>
+                Add a new product to your system.
+              </DialogDescription>
+            </DialogHeader>
+            {/* <ProductForm onSubmit={(e) => console.log(e)} /> */}
+            <ProductForm />
+          </>
+        )}
       </DialogContent>
     </Dialog>
-  );
-};
-
-interface ProductFormProps {
-  product: Product | null;
-  onAddProduct: (product: Product) => void;
-  onUpdateProduct: (product: Product) => void;
-  onOpenChange: (isOpen: boolean) => void;
-  handleImageClick: (image: string) => void;
-  setOpenImageDialog: (isOpen: boolean) => void;
-}
-
-const ProductForm = ({
-  product,
-  onAddProduct,
-  onUpdateProduct,
-  onOpenChange,
-  handleImageClick,
-}: ProductFormProps) => {
-  const [name, setName] = useState(product?.name || "");
-  const [category, setCategory] = useState(product?.category || "Electronics");
-  const [price, setPrice] = useState(product?.price || 0);
-  const [stock, setStock] = useState(product?.stock || 0);
-  const [description, setDescription] = useState(product?.description || "");
-  const [imageUrls, setImageUrls] = useState(product?.imageUrls || []);
-  const [imagePreviews, setImagePreviews] = useState<string[]>(
-    product?.imageUrls || []
-  );
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const newImageUrls = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
-      const newImagePreviews = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
-
-      setImageUrls((prev) => [...prev, ...newImageUrls]);
-      setImagePreviews((prev) => [...prev, ...newImagePreviews]);
-    }
-  };
-
-  const handleRemoveImage = (index: number) => {
-    const updatedImageUrls = imageUrls.filter((_, i) => i !== index);
-    const updatedImagePreviews = imagePreviews.filter((_, i) => i !== index);
-
-    setImageUrls(updatedImageUrls);
-    setImagePreviews(updatedImagePreviews);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const newProduct: Product = {
-      id: product?.id || 0,
-      name,
-      category,
-      price,
-      stock,
-      description,
-      imageUrls,
-    };
-
-    if (product) {
-      onUpdateProduct(newProduct);
-    } else {
-      onAddProduct(newProduct);
-    }
-
-    onOpenChange(false);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid gap-4 py-4">
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="name" className="text-right">
-            Name
-          </Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="col-span-3"
-            required
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="category" className="text-right">
-            Category
-          </Label>
-          <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Electronics">Electronics</SelectItem>
-              <SelectItem value="Clothing">Clothing</SelectItem>
-              <SelectItem value="Home">Home</SelectItem>
-              <SelectItem value="Books">Books</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="price" className="text-right">
-            Price
-          </Label>
-          <Input
-            id="price"
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
-            className="col-span-3"
-            required
-            min={0}
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="stock" className="text-right">
-            Stock
-          </Label>
-          <Input
-            id="stock"
-            type="number"
-            value={stock}
-            onChange={(e) => setStock(Number(e.target.value))}
-            className="col-span-3"
-            required
-            min={0}
-          />
-        </div>
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label htmlFor="description" className="text-right">
-            Description
-          </Label>
-          <Input
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="col-span-3"
-          />
-        </div>
-
-        {/* Image Previews with Remove Icons */}
-        <div className="grid grid-cols-4 items-center gap-4">
-          <Label className="text-right">Images</Label>
-          <div className="col-span-3 flex items-center gap-4 flex-wrap">
-            {imagePreviews.map((image, index) => (
-              <div key={index} className="relative">
-                <Image
-                  width={100}
-                  height={100}
-                  src={image}
-                  alt={`Preview ${index}`}
-                  className="w-16 h-16 object-cover rounded-md cursor-pointer"
-                  onClick={() => handleImageClick(image)}
-                />
-                <button
-                  type="button"
-                  className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                  onClick={() => handleRemoveImage(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
-            <Label htmlFor="image-upload" className="cursor-pointer">
-              Upload Images
-            </Label>
-            <Input
-              id="image-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              multiple
-              className="hidden"
-            />
-          </div>
-        </div>
-      </div>
-      <DialogFooter>
-        <Button type="submit">
-          {product ? "Update Product" : "Add Product"}
-        </Button>
-      </DialogFooter>
-    </form>
   );
 };
 
 interface ImageDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  image: string | null;
+  images: string[] | null;
+  currentImage: string | null;
+  setCurrentImage: (image: string) => void;
 }
 
-const ImageDialog = ({ open, onOpenChange, image }: ImageDialogProps) => {
+const ImageDialog = ({
+  open,
+  onOpenChange,
+  images,
+  currentImage,
+  setCurrentImage,
+}: ImageDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTitle className="hidden"></DialogTitle>
       <DialogContent>
-        {image && (
+        {/* Main Image */}
+        {currentImage && (
           <Image
             width={10000}
             height={10000}
-            src={image}
+            src={currentImage}
             alt="Full Size"
-            className="w-full h-auto"
+            className="w-full h-auto mb-4"
           />
+        )}
+
+        {/* Thumbnails */}
+        {images && images.length > 1 && (
+          <div className="flex gap-2">
+            {images.map((image, index) => (
+              <Image
+                key={index}
+                width={100}
+                height={100}
+                src={image}
+                alt={`Thumbnail ${index + 1}`}
+                className={`w-16 h-16 object-cover cursor-pointer rounded ${
+                  currentImage === image ? "border-2 border-blue-500" : ""
+                }`}
+                onClick={() => setCurrentImage(image)}
+              />
+            ))}
+          </div>
         )}
       </DialogContent>
     </Dialog>
   );
 };
+
+// };
 
 export default AdminProductsPage;
