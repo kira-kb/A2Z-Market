@@ -25,7 +25,7 @@ interface IDataItem {
   price: number;
   stock: number;
   image: string[];
-  categories: string;
+  categories: { name: string }[];
   type: string;
   subCategory: string;
   brands: string;
@@ -53,8 +53,7 @@ interface IData {
     name: string;
     description: string;
     price: number;
-    stock: number;
-    image: string[];
+    image: FileList;
     categories: string;
     type: string;
     subCategory: string;
@@ -74,7 +73,7 @@ interface IData {
     brands: string;
     conditions: string;
   }) => void;
-  deleteProduct: (id: string) => void;
+  deleteProduct: (id: string, deleteOnTelegram: boolean) => void;
 }
 
 interface ICategoryData {
@@ -212,7 +211,7 @@ export const useCartStore = create<ICart>((set, get) => ({
   },
 }));
 
-export const useDataStore = create<IData>((set) => ({
+export const useDataStore = create<IData>((set, get) => ({
   data: [],
   latestProducts: [],
   trendingItems: [],
@@ -224,8 +223,10 @@ export const useDataStore = create<IData>((set) => ({
   fetchData: async () => {
     set({ isLoadding: true });
 
-    const response = await fetch("api/product");
+    const response = await fetch("/api/product");
     const data: IDataItem[] = await response.json();
+
+    // console.log("idataItem: ", data);
 
     if (!data)
       return set({
@@ -242,7 +243,7 @@ export const useDataStore = create<IData>((set) => ({
       };
     });
 
-    const trendingItems = data.slice(5).map((item) => {
+    const trendingItems = data.slice(0, 20).map((item) => {
       return {
         ...item,
         image: typeof item.image === "string" ? item.image : item.image[0],
@@ -357,12 +358,12 @@ export const useDataStore = create<IData>((set) => ({
     name,
     description,
     price,
-    stock,
     image, // Images inputted by file input
     categories, // Product categories
     subCategory,
     brands,
     conditions,
+    type,
   }) => {
     set({
       isAdding: true,
@@ -372,32 +373,80 @@ export const useDataStore = create<IData>((set) => ({
     const sanitizedName = sanitizeInput(name);
     const sanitizedDescription = sanitizeInput(description);
     const sanitizedPrice = price;
-    const sanitizedStock = stock;
+    // const sanitizedStock = stock;
     const sanitizedCategory = sanitizeInput(categories); // Category related to products
     const sanitizedSubCategory = sanitizeInput(subCategory);
     const sanitizedBrand = sanitizeInput(brands);
+    const sanitizedType = sanitizeInput(type);
     const sanitizedCondition = sanitizeInput(conditions);
 
     // Validation check for invalid inputs
-    if (
-      !name ||
-      name !== sanitizedName ||
-      description !== sanitizedDescription ||
-      price !== sanitizedPrice ||
-      categories !== sanitizedCategory ||
-      subCategory !== sanitizedSubCategory ||
-      sanitizedStock !== stock ||
-      brands !== sanitizedBrand ||
-      conditions !== sanitizedCondition
-    ) {
-      toast.error("Invalid input");
-      return set({
-        isAdding: false,
-      });
+    // if (
+    //   !name ||
+    //   name !== sanitizedName ||
+    //   description !== sanitizedDescription ||
+    //   price !== sanitizedPrice ||
+    //   categories !== sanitizedCategory ||
+    //   subCategory !== sanitizedSubCategory ||
+    //   brands !== sanitizedBrand ||
+    //   conditions !== sanitizedCondition
+    // ) {
+    //   toast.error("Invalid input");
+    //   return set({
+    //     isAdding: false,
+    //   });
+    // }
+
+    if (!name) {
+      toast.error("Name is missing");
+      return set({ isAdding: false });
     }
+
+    if (name !== sanitizedName) {
+      toast.error("Invalid name input");
+      return set({ isAdding: false });
+    }
+
+    if (type !== sanitizedType) {
+      toast.error("Invalid type input");
+      return set({ isAdding: false });
+    }
+
+    if (categories !== sanitizedCategory) {
+      toast.error("Invalid category input");
+      return set({ isAdding: false });
+    }
+
+    if (subCategory !== sanitizedSubCategory) {
+      toast.error("Invalid subcategories input");
+      return set({ isAdding: false });
+    }
+
+    if (brands !== sanitizedBrand) {
+      toast.error("Invalid brands input");
+      return set({ isAdding: false });
+    }
+
+    if (conditions !== sanitizedCondition) {
+      toast.error("Invalid conditions input");
+      return set({ isAdding: false });
+    }
+
+    // if (image !== sanitizedImage) {
+    //   // toast.error("Invalid image input");
+    //   return set({ isUpdating: false });
+    // }
+
+    // if (id !== sanitizedId) {
+    //   toast.error("ID mismatch or invalid");
+    //   return set({ isUpdating: false });
+    // }
 
     // Create FormData to send images and other product details
     const formData = new FormData();
+
+    Array.from(image).forEach((file) => formData.append("file", file));
+
     formData.append("name", sanitizedName);
     formData.append("description", sanitizedDescription);
     formData.append("price", `${sanitizedPrice}`);
@@ -405,21 +454,20 @@ export const useDataStore = create<IData>((set) => ({
     formData.append("subCategory", sanitizedSubCategory);
     formData.append("brand", sanitizedBrand);
     formData.append("condition", sanitizedCondition);
+    formData.append("type", sanitizedType);
 
     // Append images to FormData
-    image.forEach((image) => {
-      formData.append("images", image); // Assuming 'images' is an array of File objects
-    });
 
     try {
       // Send product data (including images) to the backend
-      const response = await fetch("/api/products", {
+      const response = await fetch("/api/product", {
         method: "POST",
         body: formData, // Using FormData to send files
       });
 
       // Handle response from the backend
       if (response.ok) {
+        get().fetchData();
         toast.success("Product added successfully");
         // Optionally fetch updated data (like products list) here
       } else {
@@ -578,24 +626,28 @@ export const useDataStore = create<IData>((set) => ({
     set({ isUpdating: false });
   },
 
-  deleteProduct: async (id) => {
+  deleteProduct: async (id, deleteOnTelegram = true) => {
+    // if (!confirm("Are you sure you want to delete this product?")) return;
     set({ isDeleting: true });
     try {
-      const response = await fetch(`/api/categories?id=${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/product?id=${id}&deleteOnTelegram=${deleteOnTelegram}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       set({ isDeleting: false });
 
       if (response.ok) {
-        // await get().fetchCategories(); // Refetch to update categories
-        toast.success("Category deleted successfully");
+        get().fetchData();
+        toast.success("Product deleted successfully");
       } else {
-        toast.error("Error deleting category");
+        toast.error("Error deleting Product");
       }
     } catch (error) {
-      toast.error("Server Error deleting category");
-      console.error("Server Error deleting category:", error);
+      toast.error("Server Error deleting Product");
+      console.error("Server Error deleting Product:", error);
     }
   },
 }));

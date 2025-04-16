@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -39,9 +39,9 @@ import {
 //   SelectTrigger,
 //   SelectValue,
 // } from "@/components/ui/select";
-import { toast, Toaster } from "sonner";
+// import { toast } from "sonner";
 
-interface Product {
+interface EditProduct {
   id: string;
   name: string;
   category: string;
@@ -54,125 +54,163 @@ interface Product {
   brands: string;
   condition: string;
 }
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image: string[];
+  categories: { name: string }[];
+  type: string;
+  subCategory: string;
+  brands: string;
+  conditions: string;
+}
 
-import pic from "@/assets/images/cosmotics.png";
-import pic2 from "@/assets/images/robotics.avif";
+// import pic from "@/assets/images/cosmotics.png";
+// import pic2 from "@/assets/images/robotics.avif";
 import Image from "next/image";
 import EditProductForm from "./editProductForm";
+import { useDataStore } from "@/store";
+import { LoadingButton } from "@/components/loaddingButton";
+import ImgLoader from "@/components/imgLoader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
-const initialProducts: Product[] = [
-  {
-    id: "1",
-    name: "Product A",
-    category: "Electronics",
-    subCategory: "Electronics",
-    brands: "Electronics",
-    types: "Electronics",
-    condition: "Electronics",
-    price: 199.99,
-    stock: 50,
-    description: "This is product A description.",
-    imageUrls: [pic.src, pic2.src, pic.src, pic2.src], // Changed to array
-  },
-  {
-    id: "2",
-    name: "Product B",
-    category: "Clothing",
-    subCategory: "Clothing",
-    brands: "Clothing",
-    types: "Clothing",
-    condition: "Clothing",
-    price: 49.99,
-    stock: 100,
-    description: "This is product B description.",
-    imageUrls: [pic2.src, pic.src], // Changed to array
-  },
-  {
-    id: "3",
-    name: "Product C",
-    category: "Home",
-    subCategory: "Home",
-    brands: "Home",
-    types: "Home",
-    condition: "Home",
-    price: 79.99,
-    stock: 25,
-    description: "This is product C description.",
-    imageUrls: [pic2.src, pic.src], // Changed to array
-  },
-  {
-    id: "4",
-    name: "Product D",
-    category: "Electronics",
-    subCategory: "Electronics",
-    brands: "Electronics",
-    types: "Electronics",
-    condition: "Electronics",
-    price: 299.99,
-    stock: 30,
-    description: "This is product D description.",
-    imageUrls: [pic2.src, pic.src], // Changed to array
-  },
-  {
-    id: "5",
-    name: "Product E",
-    category: "Books",
-    subCategory: "Books",
-    brands: "Books",
-    types: "Books",
-    condition: "Books",
-    price: 19.99,
-    stock: 75,
-    description: "This is product E description.",
-    imageUrls: [pic.src, pic2.src], // Changed to array
-  },
-];
+// const initialProducts: Product[] = [
+//   {
+//     id: "1",
+//     name: "Product A",
+//     category: "Electronics",
+//     subCategory: "Electronics",
+//     brands: "Electronics",
+//     types: "Electronics",
+//     condition: "Electronics",
+//     price: 199.99,
+//     stock: 50,
+//     description: "This is product A description.",
+//     imageUrls: [pic.src, pic2.src, pic.src, pic2.src], // Changed to array
+//   },
+//   {
+//     id: "2",
+//     name: "Product B",
+//     category: "Clothing",
+//     subCategory: "Clothing",
+//     brands: "Clothing",
+//     types: "Clothing",
+//     condition: "Clothing",
+//     price: 49.99,
+//     stock: 100,
+//     description: "This is product B description.",
+//     imageUrls: [pic2.src, pic.src], // Changed to array
+//   },
+//   {
+//     id: "3",
+//     name: "Product C",
+//     category: "Home",
+//     subCategory: "Home",
+//     brands: "Home",
+//     types: "Home",
+//     condition: "Home",
+//     price: 79.99,
+//     stock: 25,
+//     description: "This is product C description.",
+//     imageUrls: [pic2.src, pic.src], // Changed to array
+//   },
+//   {
+//     id: "4",
+//     name: "Product D",
+//     category: "Electronics",
+//     subCategory: "Electronics",
+//     brands: "Electronics",
+//     types: "Electronics",
+//     condition: "Electronics",
+//     price: 299.99,
+//     stock: 30,
+//     description: "This is product D description.",
+//     imageUrls: [pic2.src, pic.src], // Changed to array
+//   },
+//   {
+//     id: "5",
+//     name: "Product E",
+//     category: "Books",
+//     subCategory: "Books",
+//     brands: "Books",
+//     types: "Books",
+//     condition: "Books",
+//     price: 19.99,
+//     stock: 75,
+//     description: "This is product E description.",
+//     imageUrls: [pic.src, pic2.src], // Changed to array
+//   },
+// ];
 
 function AdminProductsPage() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const { data, fetchData, isLoadding, deleteProduct, isDeleting } =
+    useDataStore();
+
+  // const [products, setProducts] = useState<Product[]>(data);
   const [open, setOpen] = useState(false);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [editProduct, setEditProduct] = useState<EditProduct | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [openImageDialog, setOpenImageDialog] = useState(false);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
 
+  const [deletingId, setDeletingId] = useState<string>("");
+  const [deletingPName, setDeletingPName] = useState<string>("");
+  const [deletingImg, setDeletingImg] = useState<string>("");
+  const [deleteDialog, setDeleteDialog] = useState(false);
+
   const [currentProductId, setCurrentProductId] = useState<string | null>(null);
 
-  const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-  // const handleAddProduct = (product: Product) => {
-  //   setProducts([...products, { ...product, id: `${products.length + 1}` }]);
-  //   toast.success("Product added successfully.");
-  // };
+  // console.log("data:  ", data);
+  // console.log("products:  ", products);
+
+  const filteredProducts = data.filter((product) => {
+    const nameMatch = product.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    if (searchQuery) return nameMatch;
+    // console.log("product: ", product);
+    return product;
+  });
+
+  console.log("filtered products:  ", filteredProducts);
 
   const handleEditProduct = (product: Product) => {
-    setEditProduct(product);
+    const editProduct: EditProduct = {
+      ...product,
+      category: product.categories[0].name,
+      condition: product.conditions,
+      types: product.type,
+      imageUrls: product.image,
+    };
+    setEditProduct(editProduct);
     setOpen(true);
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    setProducts(products.filter((product) => product.id !== productId));
-    toast.success("Product deleted successfully.");
+  const handleDeleteProduct = (
+    productId: string,
+    deleteOnTelegram: boolean
+  ) => {
+    setDeletingId(productId);
+    deleteProduct(productId, deleteOnTelegram);
   };
-
-  // const handleUpdateProduct = (updatedProduct: Product) => {
-  //   setProducts(
-  //     products.map((product) =>
-  //       product.id === updatedProduct.id
-  //         ? { ...product, ...updatedProduct }
-  //         : product
-  //     )
-  //   );
-  //   setOpen(false);
-  //   toast.success("Product updated successfully.");
-  // };
-
-  // const handleImageClick = (image: string) => {
-  //   setCurrentImage(image);
-  //   setOpenImageDialog(true);
-  // };
 
   const handleImageClick = (image: string, productId: string) => {
     setCurrentImage(image);
@@ -182,7 +220,7 @@ function AdminProductsPage() {
 
   return (
     <SidebarProvider>
-      <Toaster richColors position="top-center" />
+      {/* <Toaster richColors position="top-center" /> */}
       <div className="">
         <AdminSidebar className="z-0 my-16" />
         <SidebarTrigger className="fixed left-0 top-0 mt-16" />
@@ -196,10 +234,6 @@ function AdminProductsPage() {
               onOpenChange={setOpen}
               product={editProduct}
               setEditProduct={setEditProduct}
-              // onAddProduct={handleAddProduct}
-              // onUpdateProduct={handleUpdateProduct}
-              // handleImageClick={handleImageClick}
-              // setOpenImageDialog={setOpenImageDialog}
             />
           </div>
 
@@ -228,6 +262,7 @@ function AdminProductsPage() {
                     <TableHead>NO</TableHead>
                     <TableHead>Image</TableHead>
                     <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead>Sub-Category</TableHead>
                     <TableHead>Type</TableHead>
@@ -238,45 +273,48 @@ function AdminProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredProducts.map((product) => (
+                  {isLoadding && (
+                    <TableRow>
+                      <TableCell colSpan={-1}>
+                        <ImgLoader />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {filteredProducts.map((product, i) => (
                     <TableRow key={product.id}>
                       <TableCell className="font-medium">
-                        {product.id}
+                        {i + 1}
+                        {/* {product.id} */}
                       </TableCell>
                       <TableCell>
-                        {product.imageUrls.length > 0 && (
-                          // <Image
-                          //   width={100}
-                          //   height={100}
-                          //   src={product.imageUrls[0]} // Display the first image
-                          //   alt={product.name}
-                          //   className="w-12 h-12 object-cover rounded-md cursor-pointer"
-                          //   onClick={() =>
-                          //     handleImageClick(product.imageUrls[0])
-                          //   }
-                          // />
+                        {product.image.length > 0 && (
                           <Image
                             width={100}
                             height={100}
-                            src={product.imageUrls[0]} // Display the first image
+                            src={`/api/telegram-file?fileId=${product.image[0]}`} // Display the first image
                             alt={product.name}
                             className="w-12 h-12 object-cover rounded-md cursor-pointer"
                             onClick={() =>
-                              handleImageClick(product.imageUrls[0], product.id)
+                              handleImageClick(product.image[0], product.id)
                             }
                           />
                         )}
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>{product.category}</TableCell>
-                      <TableCell>{product.category}</TableCell>
+                      <TableCell>
+                        {product.description.length > 15
+                          ? product.description.slice(0, 15) + "..."
+                          : product.description}
+                      </TableCell>
+                      <TableCell>{product.categories[0].name}</TableCell>
+                      <TableCell>{product.subCategory}</TableCell>
+                      <TableCell>{product.type}</TableCell>
+                      <TableCell>{product.brands}</TableCell>
                       <TableCell>{product.stock}</TableCell>
                       <TableCell className="text-green-700 dark:text-green-400 font-bold">
                         ${product.price.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex flex-nowrap">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -284,16 +322,22 @@ function AdminProductsPage() {
                         >
                           <Pencil className="h-4 w-4 text-orange-600 dark:text-orange-500" />
                         </Button>
-                        <Button
+                        <LoadingButton
+                          loading={isDeleting && deletingId === product.id}
                           variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteProduct(product.id)}
+                          // size="icon"
+                          LoadingText="D..."
+                          className="mx-3 p-2 text-red-700 dark:text-red-400"
+                          onClick={() => {
+                            // handleDeleteProduct(product.id)
+                            setDeleteDialog(true);
+                            setDeletingId(product.id);
+                            setDeletingPName(product.name);
+                            setDeletingImg(product.image[0]);
+                          }}
                         >
                           <Trash2 className="h-4 w-4 text-red-700 dark:text-red-400" />
-                        </Button>
-                        {/* <Button variant="ghost" size="icon">
-                          <Eye className="h-4 w-4" />
-                        </Button> */}
+                        </LoadingButton>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -303,21 +347,27 @@ function AdminProductsPage() {
           </Card>
         </div>
       </div>
-      {/* <ImageDialog
-        open={openImageDialog}
-        onOpenChange={setOpenImageDialog}
-        image={currentImage}
-      /> */}
+
       <ImageDialog
         open={openImageDialog}
         onOpenChange={setOpenImageDialog}
         images={
-          filteredProducts.find((p) => p.id === currentProductId)?.imageUrls ||
-          null
+          filteredProducts.find((p) => p.id === currentProductId)?.image || null
         }
         currentImage={currentImage}
         setCurrentImage={setCurrentImage}
       />
+
+      {deletingId && (
+        <DeleteAlert
+          open={deleteDialog}
+          onOpenChange={setDeleteDialog}
+          productId={deletingId}
+          productName={deletingPName}
+          img={deletingImg}
+          onDelete={handleDeleteProduct}
+        />
+      )}
     </SidebarProvider>
   );
 }
@@ -329,8 +379,8 @@ function AdminProductsPage() {
 interface ProductDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  product: Product | null;
-  setEditProduct: (product: Product | null) => void;
+  product: EditProduct | null;
+  setEditProduct: (product: EditProduct | null) => void;
 }
 
 const ProductDialog = ({
@@ -408,9 +458,13 @@ const ImageDialog = ({
           <Image
             width={10000}
             height={10000}
-            src={currentImage}
+            // src={currentImage}
+            src={`/api/telegram-file?fileId=${currentImage}`}
             alt="Full Size"
-            className="w-full h-auto mb-4"
+            // className="w-full h-auto mb-4 max-h[300px]"
+            className="max-w-[70%] mx-auto h-auto mb-4"
+            sizes="contain"
+            loading="lazy"
           />
         )}
 
@@ -422,10 +476,11 @@ const ImageDialog = ({
                 key={index}
                 width={100}
                 height={100}
-                src={image}
+                // src={image}
+                src={`/api/telegram-file?fileId=${image}`}
                 alt={`Thumbnail ${index + 1}`}
                 className={`w-16 h-16 object-cover cursor-pointer rounded ${
-                  currentImage === image ? "border-2 border-blue-500" : ""
+                  currentImage === image ? "border-4 border-blue-500" : ""
                 }`}
                 onClick={() => setCurrentImage(image)}
               />
@@ -434,6 +489,83 @@ const ImageDialog = ({
         )}
       </DialogContent>
     </Dialog>
+  );
+};
+
+// ????????????????????????????????????????????????????????????????
+
+interface IDeleteAlert {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  productId: string;
+  productName?: string;
+  img?: string;
+  onDelete: (productId: string, deleteOnTelegram: boolean) => void;
+}
+
+const DeleteAlert = ({
+  open,
+  onOpenChange,
+  productId,
+  onDelete,
+  productName,
+  img,
+}: IDeleteAlert) => {
+  const [deleteOnTelegram, setDeleteOnTelegram] = useState(true);
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete This Product?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This will permanently remove this product and its media group.
+            <strong className="text-red-600">
+              This action cannot be undone.
+            </strong>
+            <br />
+            <br />
+            {productName && (
+              <strong className="text-red-500 text-2xl">{productName}</strong>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        {/* Image Preview */}
+        {img && (
+          <div className="flex justify-center my-3 max-h-44">
+            <Image
+              width={400}
+              height={400}
+              src={`/api/telegram-file?fileId=${img}`}
+              alt={productName || "Product Image"}
+              className="resize-none object-contain rounded-lg border shadow-md"
+            />
+          </div>
+        )}
+
+        {/* Checkbox */}
+        <div className="flex items-center space-x-2 my-4">
+          <Checkbox
+            id="delete-on-telegram"
+            checked={deleteOnTelegram}
+            onCheckedChange={(val) => setDeleteOnTelegram(!!val)}
+          />
+          <Label htmlFor="delete-on-telegram" className="cursor-pointer">
+            Also delete on Telegram
+          </Label>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => onDelete(productId, deleteOnTelegram)}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 };
 

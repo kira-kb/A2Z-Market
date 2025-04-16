@@ -131,7 +131,8 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
                   <Image
                     width={100}
                     height={100}
-                    src={image}
+                    // src={image}
+                    src={`/api/telegram-file?fileId=${image}`}
                     alt={`Preview ${index}`}
                     className="w-16 h-16 object-cover rounded-md cursor-pointer"
                   />

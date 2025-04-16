@@ -3,6 +3,13 @@ import fs from "fs/promises";
 // import fileSystem from "fs";
 import { join } from "path";
 import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
+import prisma from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+
+const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
+const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
+
+const bot = new TelegramBot(telegramBotToken, { polling: false });
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,8 +29,32 @@ export async function POST(req: NextRequest) {
     const brand = data.get("brand") as string;
     const condition = data.get("condition") as string;
     const tags = data.get("tags") as string;
+    // const CategoryId = data.get("categoryId") as string;
 
-    // name, price, description, category, subCategory, brand, condition, type
+    // console.log(
+    //   "incomming data: ",
+    //   name,
+    //   description,
+    //   price,
+    //   type,
+    //   category,
+    //   subCategory,
+    //   brand,
+    //   condition,
+    //   tags
+    // );
+
+    //  TODO CHECKING CATEGORY
+    const categories = await prisma.category.findUnique({
+      where: { name: category },
+    });
+
+    // console.log("categories:  ", categories);
+
+    if (!categories) {
+      console.log("Category not found");
+      return NextResponse.json({ msg: "Category not found" }, { status: 404 });
+    }
 
     if (!name || !price || !category)
       return NextResponse.json(
@@ -51,10 +82,6 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
       "C:/Users/kirub/OneDrive/Desktop/code space/javascript/nextjs/Nextjs-projects/A2Z-Market-main/app/api/product",
       "public"
     );
-
-    const telegramBotToken = process.env
-      .NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
-    const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
 
     if (!telegramBotToken || !chatId) {
       return NextResponse.json(
@@ -87,23 +114,94 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
       })
     );
 
-    const bot = new TelegramBot(telegramBotToken, { polling: false });
+    // const bot = new TelegramBot(telegramBotToken, { polling: false });
 
     // Send multiple images to Telegram
     const mediaGroup = await bot.sendMediaGroup(chatId, preparedMedia);
 
+    // TODO GETTING IMAGE PATH
+    // const photoLinks = await Promise.all(
+    //   mediaGroup.map(async (media) => {
+    //     // if (!media) return;
+    //     if (!media.photo) return;
+    //     const fileId = media.photo[media.photo.length - 1].file_id;
+    //     const file = await bot.getFile(fileId);
+    //     return `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+    //   })
+    // );
+
+    // TODO GETTING IMAGE ID
+
     const photoLinks = await Promise.all(
-      mediaGroup.map(async (media) => {
-        // if (!media) return;
-        if (!media.photo) return;
-        const fileId = media.photo[media.photo.length - 1].file_id;
-        const file = await bot.getFile(fileId);
-        return `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
-      })
+      mediaGroup.map(async (media) =>
+        media.photo ? media.photo[media.photo.length - 1].file_id : null
+      )
     );
 
-    // console.log("this are the pictures:-  ", photoLinks.join("\n "));
-    photoLinks.forEach((path) => (path ? fs.rm(path) : undefined));
+    // TODO GETTING MESSAGE ID
+
+    const tgMsgId = await Promise.all(mediaGroup.map((msg) => msg.message_id));
+
+    // TODO SAVING PRODUCT WHITH IMAGES ID TO DATABASE
+
+    const subCategories = categories.subCategory
+      ?.split(", ")
+      .map((sub) => sub.trim())
+      .includes(subCategory)
+      ? subCategory
+      : undefined;
+    const brands = categories.brands
+      ?.split(", ")
+      .map((brand) => brand.trim())
+      .includes(brand)
+      ? brand
+      : undefined;
+    const conditions = categories.conditions
+      ?.split(", ")
+      .map((cond) => cond.trim())
+      .includes(condition)
+      ? condition
+      : undefined;
+    const types = categories.type
+      ?.split(", ")
+      .map((t) => t.trim())
+      .includes(type)
+      ? type
+      : undefined;
+
+    const productPost = {
+      name,
+      description,
+      price,
+      categoryName: category,
+      subCategory: subCategories,
+      brands,
+      type: types,
+      conditions,
+      image: photoLinks.filter((link): link is string => !!link),
+    };
+
+    console.log("product data: **  ", productPost);
+
+    await prisma.product.create({
+      data: {
+        name,
+        description,
+        price,
+        categories: {
+          connect: { name: category },
+        },
+        subCategory: subCategories,
+        brands,
+        type: types,
+        conditions,
+        tgMsgId,
+        image: photoLinks.filter((link): link is string => !!link),
+      },
+    });
+
+    // console.log("this are the pictures id:-  ", photoLinks.join("\n "));
+    filePaths.forEach((path) => (path ? fs.rm(path) : null));
 
     return NextResponse.json(
       { msg: "Files uploaded and sent to Telegram", paths: filePaths },
@@ -112,6 +210,198 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
   } catch (error) {
     console.error("Error uploading files:", error);
     return NextResponse.json({ msg: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// TODO GETTING PRODUCT
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+
+    const productId = searchParams.get("id");
+    if (productId) {
+      const product = await prisma.product.findUnique({
+        where: { id: productId },
+        include: { categories: true },
+      });
+
+      if (!product) {
+        return NextResponse.json({ msg: "Product not found" }, { status: 404 });
+      }
+
+      return NextResponse.json(product, { status: 200 });
+    }
+
+    const search = searchParams.get("search");
+    const subCategory = searchParams
+      .get("subCategory")
+      ?.split(",")
+      .map((s) => s.trim());
+    const type = searchParams
+      .get("type")
+      ?.split(",")
+      .map((s) => s.trim());
+    const brand = searchParams
+      .get("brand")
+      ?.split(",")
+      .map((s) => s.trim());
+    const condition = searchParams
+      .get("condition")
+      ?.split(",")
+      .map((s) => s.trim());
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+
+    // const sortBy = searchParams.get("sortBy") || "createdAt";
+    // const sortOrder = searchParams.get("sortOrder") || "desc";
+    const sort: Prisma.ProductOrderByWithRelationInput = {
+      createdAt: searchParams.get("sortOrder") === "asc" ? "asc" : "desc",
+    };
+    // const sort: Prisma.ProductOrderByWithRelationInput = {" ? "desc" : "asc"};
+
+    const filters: Prisma.ProductWhereInput = {};
+
+    if (search) {
+      filters.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        // { tags: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (subCategory?.length) {
+      filters.subCategory = { in: subCategory };
+    }
+
+    if (type?.length) {
+      filters.type = { in: type };
+    }
+
+    if (brand?.length) {
+      filters.brands = { in: brand };
+    }
+
+    if (condition?.length) {
+      filters.conditions = { in: condition };
+    }
+
+    if (minPrice || maxPrice) {
+      filters.price = {};
+      if (minPrice) filters.price.gte = parseFloat(minPrice);
+      if (maxPrice) filters.price.lte = parseFloat(maxPrice);
+    }
+
+    const products = await prisma.product.findMany({
+      where: filters,
+      orderBy: sort,
+      include: {
+        categories: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(products, { status: 200 });
+  } catch (error) {
+    console.error("GET /api/product error:", error);
+    return NextResponse.json({ msg: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// TODO UPDATE a product (PUT)
+export async function PUT(req: Request) {
+  try {
+    const data = await req.formData();
+    const files = data.getAll("file") as File[];
+    const name = data.get("name") as string;
+    const description = data.get("description") as string;
+    const price = parseFloat(data.get("price") as string);
+    const stock = parseInt(data.get("stock") as string);
+    const image = data.get("image") as string;
+    const categories = data.getAll("categories") as string[];
+    const id = data.get("id") as string;
+
+    // const body = await req.json();
+    // const { id, name, description, price, stock, image, categories } = body;
+
+    if (!files || files.length === 0) {
+      // return NextResponse.json({ msg: "No files uploaded" }, { status: 400 });
+      console.log("on images uploaded");
+    }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        description,
+        price,
+        stock,
+        image,
+        categories: {
+          set: categories.map((id: string) => ({ id })), // Reset categories
+        },
+      },
+    });
+
+    return NextResponse.json(updatedProduct, { status: 200 });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    return NextResponse.json(
+      { error: "Failed to update product" },
+      { status: 500 }
+    );
+  }
+}
+
+// TODO DELETE a product (DELETE)
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+
+    const productId = searchParams.get("id");
+    const deleteOnTelegram = searchParams.get("deleteOnTelegram");
+
+    if (!productId) {
+      return NextResponse.json(
+        { msg: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (deleteOnTelegram === "true") {
+      const messageId = await prisma.product.findUnique({
+        where: { id: productId },
+        select: { tgMsgId: true },
+      });
+
+      if (!messageId) return;
+
+      for (const id of messageId.tgMsgId) {
+        try {
+          await bot.deleteMessage(chatId, id);
+        } catch (err) {
+          console.error(`Failed to delete ${id}`, err);
+        }
+      }
+
+      // await bot.deleteMessage(chatId, messageId.tgMsgId);
+    }
+
+    // const deletedProduct = await prisma.product.delete({
+    await prisma.product.delete({
+      where: { id: productId },
+    });
+
+    return NextResponse.json("Product Deleted", { status: 200 });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    return NextResponse.json(
+      { error: "Failed to delete product" },
+      { status: 500 }
+    );
   }
 }
 
@@ -242,34 +532,34 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 // import { NextResponse } from "next/server";
 // import prisma from "@/lib/prisma";
 
-// // CREATE a product (POST)
-// // export async function POST(req: Request) {
-// //   try {
-// //     const body = await req.json();
-// //     const { name, description, price, stock, image, categories } = body;
+// CREATE a product (POST)
+// export async function POST(req: Request) {
+//   try {
+//     const body = await req.json();
+//     const { name, description, price, stock, image, categories } = body;
 
-// //     const newProduct = await prisma.product.create({
-// //       data: {
-// //         name,
-// //         description,
-// //         price,
-// //         stock,
-// //         image,
-// //         categories: {
-// //           connect: categories.map((id: string) => ({ id })),
-// //         },
-// //       },
-// //     });
+//     const newProduct = await prisma.product.create({
+//       data: {
+//         name,
+//         description,
+//         price,
+//         stock,
+//         image,
+//         categories: {
+//           connect: categories.map((id: string) => ({ id })),
+//         },
+//       },
+//     });
 
-// //     return NextResponse.json(newProduct, { status: 201 });
-// //   } catch (error) {
-// //     console.error("Error creating product:", error);
-// //     return NextResponse.json(
-// //       { error: "Failed to create product" },
-// //       { status: 500 }
-// //     );
-// //   }
-// // }
+//     return NextResponse.json(newProduct, { status: 201 });
+//   } catch (error) {
+//     console.error("Error creating product:", error);
+//     return NextResponse.json(
+//       { error: "Failed to create product" },
+//       { status: 500 }
+//     );
+//   }
+// }
 
 // // ?????????????????????????????????????
 // // ?????????????????????????????????????

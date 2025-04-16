@@ -45,7 +45,8 @@ export function InfiniteSliderHoverSpeed() {
           >
             <Link href={`/shop/${item.id}`} className="h-full">
               <Image
-                src={item.image}
+                // src={`api/telegram-file?fileId=${item.image}`}
+                src={`/api/telegram-file?fileId=${item.image}`}
                 alt="product image"
                 width={400}
                 height={400}
@@ -56,7 +57,9 @@ export function InfiniteSliderHoverSpeed() {
               <Link href={`/shop/${item.id}`}>
                 <h5 className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white w-[220px]">
                   {/* Apple Watch Series 7 GPS, Aluminium Case, Starlight Sport */}
-                  {item.title}
+                  {item.name.length > 33
+                    ? item.name.slice(0, 30) + "..."
+                    : item.name}
                 </h5>
               </Link>
 

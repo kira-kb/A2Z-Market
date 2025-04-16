@@ -34,6 +34,7 @@ model Product {
   price       Float
   stock       Int?
   image       String[] // Can be URL to product image
+  tgMsgId     Int[]
 
   categories  Category[]  @relation("ProductCategories")
   type        String?
@@ -48,7 +49,7 @@ model Product {
 
 model Category {
   id          String    @id @default(uuid())
-  name        String
+  name        String    @unique()
   type        String? // Category type, e.g., 'Men', 'Women', 'Kids'
   subCategory String? // Sub-category like 'Tops', 'Bottoms'
   products    Product[] @relation("ProductCategories")

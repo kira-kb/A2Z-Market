@@ -1,4 +1,6 @@
-import { FC } from "react";
+"use client";
+
+import { FC, useEffect } from "react";
 import {
   Select,
   SelectTrigger,
@@ -8,8 +10,10 @@ import {
 // import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useCategoryStore } from "@/store";
 
 interface ICategory {
+  // categoryId: string
   category: string;
   subCategory: string;
   types: string;
@@ -22,56 +26,56 @@ interface ICategoryFilter {
   setCategories: React.Dispatch<React.SetStateAction<ICategory>>;
 }
 
-const categories = [
-  {
-    id: "1",
-    name: "clothing",
-    type: ["mens", "womens", "unisex"],
-    subCategories: [
-      "top wears",
-      "bottom wears",
-      "underwears",
-      "dress",
-      "skirt",
-    ],
-    brands: [
-      { label: "Nike", value: "Nike" },
-      { label: "Adidas", value: "Adidas" },
-      { label: "Crux", value: "Crux" },
-    ],
-  },
-  {
-    id: "2",
-    name: "mobiles",
-    type: ["button", "smart"],
-    brands: [
-      { label: "Apple", value: "Apple" },
-      { label: "Samsung", value: "Samsung" },
-      { label: "Techno", value: "Techno" },
-      { label: "Motorolla", value: "Motorolla" },
-      { label: "Blu", value: "Blu" },
-    ],
-    condition: ["new", "refurbished", "used"],
-  },
-  {
-    id: "3",
-    name: "laptop",
-    type: ["gaming", "office", "budget"],
-    brands: [
-      { label: "Hp", value: "Hp" },
-      { label: "Toshiba", value: "Toshiba" },
-      { label: "Dell", value: "Dell" },
-      { label: "Vivo", value: "Vivo" },
-      { label: "Microsoft", value: "Microsoft" },
-      { label: "Acer", value: "Acer" },
-    ],
-    condition: ["new", "refurbished", "used"],
-  },
-  {
-    id: "4",
-    name: "books",
-  },
-];
+// const categories = [
+//   {
+//     id: "1",
+//     name: "clothing",
+//     type: ["mens", "womens", "unisex"],
+//     subCategories: [
+//       "top wears",
+//       "bottom wears",
+//       "underwears",
+//       "dress",
+//       "skirt",
+//     ],
+//     brands: [
+//       { label: "Nike", value: "Nike" },
+//       { label: "Adidas", value: "Adidas" },
+//       { label: "Crux", value: "Crux" },
+//     ],
+//   },
+//   {
+//     id: "2",
+//     name: "mobiles",
+//     type: ["button", "smart"],
+//     brands: [
+//       { label: "Apple", value: "Apple" },
+//       { label: "Samsung", value: "Samsung" },
+//       { label: "Techno", value: "Techno" },
+//       { label: "Motorolla", value: "Motorolla" },
+//       { label: "Blu", value: "Blu" },
+//     ],
+//     condition: ["new", "refurbished", "used"],
+//   },
+//   {
+//     id: "3",
+//     name: "laptop",
+//     type: ["gaming", "office", "budget"],
+//     brands: [
+//       { label: "Hp", value: "Hp" },
+//       { label: "Toshiba", value: "Toshiba" },
+//       { label: "Dell", value: "Dell" },
+//       { label: "Vivo", value: "Vivo" },
+//       { label: "Microsoft", value: "Microsoft" },
+//       { label: "Acer", value: "Acer" },
+//     ],
+//     condition: ["new", "refurbished", "used"],
+//   },
+//   {
+//     id: "4",
+//     name: "books",
+//   },
+// ];
 
 const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
   const handleTypeChange = (type: string) => {
@@ -80,6 +84,12 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
       types: type,
     }));
   };
+
+  const { categories, fetchCategories } = useCategoryStore();
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   // const handleBrandChange = (brand: string) => {
   //   setCategories((prev) => ({
@@ -125,126 +135,113 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
       </div>
 
       {/* Subcategory Dropdown (if available) */}
-      {selectedCategoryData?.subCategories && (
-        <div>
-          <label className="block mb-2 text-sm font-medium text-red-600">
-            *Subcategory (required)
-          </label>
-          <Select
-            required
-            onValueChange={(value) =>
-              setCategories((prev) => ({ ...prev, subCategory: value }))
-            }
-          >
-            <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
-              <span>{category.subCategory || "Select Subcategory"}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCategoryData.subCategories.map((subCat) => (
-                <SelectItem key={subCat} value={subCat}>
-                  {subCat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {selectedCategoryData?.subCategories &&
+        selectedCategoryData?.subCategories.length > 0 && (
+          <div>
+            <label className="block mb-2 text-sm font-medium text-red-600">
+              *Subcategory (required)
+            </label>
+            <Select
+              required
+              onValueChange={(value) =>
+                setCategories((prev) => ({ ...prev, subCategory: value }))
+              }
+            >
+              <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
+                <span>{category.subCategory || "Select Subcategory"}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {selectedCategoryData.subCategories.map((subCat) => (
+                  <SelectItem key={subCat} value={subCat}>
+                    {subCat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
       {/* Types Filter (if available) */}
-      {selectedCategoryData?.type && (
-        <div>
-          <label className="block mb-2 text-sm font-medium text-red-600">
-            *Types (required)
-          </label>
-          {/* <div className="flex flex-row flex-wrap justify-between gap-2">
-            {selectedCategoryData.type.map((type) => (
-              <div
-                key={type}
-                className="flex items-center border-b-[1px] border-gray-600 cursor-pointer"
-              >
-                <Checkbox
-                  id={type}
-                  checked={category.types === type}
-                  onCheckedChange={() => handleTypeChange(type)}
-                  // required
-                />
-                <label htmlFor={type} className="ml-2 text-sm cursor-pointer">
-                  {type}
-                </label>
-              </div>
-            ))}
-          </div> */}
-          <RadioGroup
-            onValueChange={handleTypeChange}
-            required
-            className="flex flex-wrap flex-row gap-2 justify-between"
-          >
-            {selectedCategoryData.type.map((radioType) => (
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                key={radioType}
-              >
-                <RadioGroupItem value={radioType} id={radioType} />
-                <Label className="cursor-pointer" htmlFor={radioType}>
-                  {radioType}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-      )}
+      {selectedCategoryData?.type &&
+        selectedCategoryData?.type.length > 0 &&
+        selectedCategoryData?.type[0].length > 0 && (
+          <div>
+            <label className="block mb-2 text-sm font-medium text-red-600">
+              *Types (required)
+            </label>
+            <RadioGroup
+              onValueChange={handleTypeChange}
+              required
+              className="flex flex-wrap flex-row gap-2 justify-between"
+            >
+              {selectedCategoryData.type.map((radioType) => (
+                <div
+                  className="flex items-center space-x-2 cursor-pointer"
+                  key={radioType}
+                >
+                  <RadioGroupItem value={radioType} id={radioType} />
+                  <Label className="cursor-pointer" htmlFor={radioType}>
+                    {radioType}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+        )}
 
       {/* Brands Filter (if available) */}
-      {selectedCategoryData?.brands && (
-        <div>
-          <label className="block mb-2 text-sm font-medium text-red-600">
-            *Brands (required)
-          </label>
-          <Select
-            required
-            onValueChange={(value) =>
-              setCategories((prev) => ({ ...prev, brands: value }))
-            }
-          >
-            <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
-              <span>{category.brands || "Select Brands"}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCategoryData.brands.map((brands) => (
-                <SelectItem key={brands.label} value={brands.value}>
-                  {brands.value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {selectedCategoryData?.brands &&
+        selectedCategoryData?.brands.length > 0 && (
+          <div>
+            <label className="block mb-2 text-sm font-medium text-red-600">
+              *Brands (required)
+            </label>
+            <Select
+              required
+              onValueChange={(value) =>
+                setCategories((prev) => ({ ...prev, brands: value }))
+              }
+            >
+              <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
+                <span>{category.brands || "Select Brands"}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {selectedCategoryData.brands.map((brands) => (
+                  <SelectItem key={brands.label} value={brands.value}>
+                    {brands.value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
       {/* Condition Filter (if available) */}
-      {selectedCategoryData?.condition && (
-        <div>
-          <label className="block mb-2 text-sm font-medium text-red-600">
-            *Condition (required)
-          </label>
-          <Select
-            required
-            onValueChange={(value) =>
-              setCategories((prev) => ({ ...prev, condition: value }))
-            }
-          >
-            <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
-              <span>{category.condition || "Select Condition"}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCategoryData.condition.map((condition) => (
-                <SelectItem key={condition} value={condition}>
-                  {condition}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {selectedCategoryData?.conditions &&
+        selectedCategoryData?.conditions.length > 0 && (
+          <div>
+            <label className="block mb-2 text-sm font-medium text-red-600">
+              *Condition (required)
+            </label>
+            <Select
+              required
+              onValueChange={(value) =>
+                setCategories((prev) => ({ ...prev, condition: value }))
+              }
+            >
+              <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
+                <span>{category.condition || "Select Condition"}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {selectedCategoryData.conditions.map((condition) => (
+                  <SelectItem key={condition} value={condition}>
+                    {condition}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
     </div>
   );
 };

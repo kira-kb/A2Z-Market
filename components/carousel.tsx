@@ -33,16 +33,6 @@ export function AppCarousel() {
               <CarouselCard data={item} />
             </CarouselItem>
           ))}
-
-          {/* <CarouselItem className="p-4">
-            <CarouselCard />
-          </CarouselItem>
-          <CarouselItem className="p-4">
-            <CarouselCard />
-          </CarouselItem>
-          <CarouselItem className="p-4">
-            <CarouselCard />
-          </CarouselItem> */}
         </CarouselContent>
         <CarouselNavigation alwaysShow />
         <CarouselIndicator />
