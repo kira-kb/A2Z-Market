@@ -3,7 +3,8 @@ import fs from "fs/promises";
 import { join } from "path";
 import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
 import prisma from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+// import { Prisma } from "@prisma/client";
+import { Prisma } from "@/prisma/lib/generatedPrismaClient";
 
 const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
 const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
@@ -304,7 +305,7 @@ export async function GET(req: NextRequest) {
 
     // const sortBy = searchParams.get("sortBy") || "createdAt";
     // const sortOrder = searchParams.get("sortOrder") || "desc";
-    const sort: Prisma.ProductOrderByWithAggregationInput = {
+    const sort: Prisma.ProductOrderByWithRelationInput = {
       createdAt: searchParams.get("sortOrder") === "asc" ? "asc" : "desc",
     };
     // const sort: Prisma.ProductOrderByWithRelationInput = {" ? "desc" : "asc"};
