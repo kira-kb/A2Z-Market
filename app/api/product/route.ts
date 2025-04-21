@@ -304,7 +304,7 @@ export async function GET(req: NextRequest) {
 
     // const sortBy = searchParams.get("sortBy") || "createdAt";
     // const sortOrder = searchParams.get("sortOrder") || "desc";
-    const sort: Prisma.ProductOrderByWithRelationInput = {
+    const sort: Prisma.ProductOrderByWithAggregationInput = {
       createdAt: searchParams.get("sortOrder") === "asc" ? "asc" : "desc",
     };
     // const sort: Prisma.ProductOrderByWithRelationInput = {" ? "desc" : "asc"};
