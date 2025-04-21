@@ -17,9 +17,10 @@ function Shop() {
   const { data, isLoadding, fetchData } = useDataStore();
 
   useEffect(() => {
-    if (!data) fetchData();
-  }, [fetchData, data]);
+    fetchData();
+  }, [fetchData]);
 
+  console.log(data);
   // return <CategoryFilter />;
 
   return (
@@ -64,7 +65,7 @@ function Shop() {
               <ProductCard
                 key={item.id}
                 layout={`${flow === "flex" ? "row" : "col"}`}
-                name={item.title}
+                name={item.name}
                 id={item.id}
                 price={item.price}
                 description={item.description}

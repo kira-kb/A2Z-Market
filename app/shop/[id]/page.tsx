@@ -13,21 +13,23 @@ const ProductDetailsPage: FC = () => {
   const { data, fetchData, isLoadding } = useDataStore();
   const { addCartItem } = useCartStore();
 
-  console.log(useParams().id);
+  // console.log(useParams().id);
 
   const [renderData, setRenderData] = useState<{
     id: string;
-    title: string;
+    name: string;
     price: number;
     image: string[];
     description: string;
   }>({
     id: "",
-    title: "",
+    name: "",
     price: 0,
     image: [],
     description: "",
   });
+
+  const [bigImg, setBigImg] = useState("");
 
   const id = useParams().id;
 
@@ -36,12 +38,15 @@ const ProductDetailsPage: FC = () => {
       await fetchData();
       if (!id) return;
       const product = data.find((item) => +item.id === +id || item.id == id);
+
+      console.log("product, ", product);
       if (product) {
+        setBigImg(product.image[0]);
         setRenderData(product);
       }
     };
     loadData();
-  }, [data, fetchData, id]);
+  });
 
   if (isLoadding)
     return (
@@ -57,8 +62,8 @@ const ProductDetailsPage: FC = () => {
         <div className="flex flex-col items-center justify-center space-y-4 md:min-h-[300px]">
           <div className="flex-1 flex items-center justify-center">
             <Image
-              src={renderData.image[0] || gen}
-              alt={renderData.title}
+              src={`/api/telegram-file?fileId=${bigImg || gen}`}
+              alt={renderData.name}
               width={300}
               height={400}
               className="rounded-lg object-contain"
@@ -66,40 +71,30 @@ const ProductDetailsPage: FC = () => {
           </div>
 
           <div className="flex space-x-2">
-            <Image
-              src={renderData.image[0] || gen}
-              alt={renderData.title}
-              width={60}
-              height={60}
-              className="rounded-md border"
-            />
-            <Image
-              src={renderData.image[0] || gen}
-              alt={renderData.title}
-              width={60}
-              height={60}
-              className="rounded-md border"
-            />
-            <Image
-              src={renderData.image[0] || gen}
-              alt={renderData.title}
-              width={60}
-              height={60}
-              className="rounded-md border"
-            />
+            {renderData.image.map((img) => (
+              <Image
+                key={img}
+                src={`/api/telegram-file?fileId=${img || gen}`}
+                alt={renderData.name}
+                onClick={() => setBigImg(img)}
+                width={60}
+                height={60}
+                className="rounded-md border"
+              />
+            ))}
           </div>
         </div>
 
         {/* Product Details Section */}
         <div className="w-96">
-          <h1 className="text-2xl font-bold mb-2">{renderData.title}</h1>
+          <h1 className="text-2xl font-bold mb-2">{renderData.name}</h1>
           <p className="text-xl text-gray-700 mb-2">
             ${renderData.price} <span className="line-through"></span>
           </p>
-          <p className="text-sm text-gray-500 mb-4">
+          {/* <p className="text-sm text-gray-500 mb-4">
             Shipping Speed to Delivery. EMIs from $100/month. Bank Offer: Extra
             5% off* with Axis Bank Buzz Credit Card
-          </p>
+          </p> */}
           <Card className="mb-4">
             <CardContent>
               <ul className="text-sm list-disc list-inside text-gray-600">
@@ -113,7 +108,7 @@ const ProductDetailsPage: FC = () => {
             onClick={() =>
               addCartItem({
                 id: renderData.id,
-                name: renderData.title,
+                name: renderData.name,
                 price: renderData.price,
                 image: renderData.image[0],
                 quantity: 1,

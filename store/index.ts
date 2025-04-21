@@ -65,8 +65,9 @@ interface IData {
     name: string;
     description: string;
     price: number;
-    stock: number;
-    image: string[];
+    stock?: number;
+    imageUrls: string[];
+    image?: FileList;
     categories: string;
     type: string;
     subCategory: string;
@@ -143,17 +144,14 @@ const sanitizeUnsplashUrl = (url: string): string => {
   }
 };
 
-function sanitizeTelegramImageURLs(imageURLs: string[]) {
-  // Define a regex for a valid URL structure
-  const urlRegex = /^(https?:\/\/)?([\w\-]+\.)+[\w\-]+(\/[\w\-./?%&=]*)?$/;
+function sanitizeTelegramImageIDs(imageIDs: string[]) {
+  const regex = /^[a-zA-Z0-9_-]+$/;
 
-  // Filter and sanitize the image URLs
-  const sanitizedURLs = imageURLs.filter((url) => {
-    // Check if the URL matches a valid structure and contains "telegram" domain
-    return urlRegex.test(url) && url.includes("telegram");
-  });
+  const allValid = imageIDs.every(
+    (id) => typeof id === "string" && regex.test(id)
+  );
 
-  return sanitizedURLs;
+  return allValid;
 }
 
 export const useCartStore = create<ICart>((set, get) => ({
@@ -236,14 +234,14 @@ export const useDataStore = create<IData>((set, get) => ({
         isLoadding: false,
       });
 
-    const latestProducts = data.slice(0, 5).map((item) => {
+    const latestProducts = data?.slice(0, 5).map((item) => {
       return {
         ...item,
         image: typeof item.image === "string" ? item.image : item.image[0],
       };
     });
 
-    const trendingItems = data.slice(0, 20).map((item) => {
+    const trendingItems = data?.slice(0, 20).map((item) => {
       return {
         ...item,
         image: typeof item.image === "string" ? item.image : item.image[0],
@@ -257,102 +255,6 @@ export const useDataStore = create<IData>((set, get) => ({
       isLoadding: false,
     });
   },
-
-  // addProduct: async ({
-  //   name,
-  //   description,
-  //   price,
-  //   stock,
-  //   image,
-  //   categories,
-  //   type,
-  //   subCategory,
-  //   brands,
-  //   conditions,
-  // }) => {
-  //   set({
-  //     isAdding: true,
-  //   });
-
-  //   const sanitizedName = sanitizeInput(name);
-  //   const sanitizedType = sanitizeInput(type);
-  //   const sanitizedSubCategories = sanitizeInput(subCategory);
-  //   const sanitizedBrands = sanitizeInput(brands);
-  //   const sanitizedConditions = sanitizeInput(conditions);
-
-  //   const sanitizedDescription = sanitizeInput(description);
-  //   const sanitizedprice = price;
-  //   const sanitizedStock = stock;
-  //   const sanitizedCategory = sanitizeInput(categories);
-
-  //   const sanitizedImage = sanitizeTelegramImageURLs(image);
-
-  //   if (
-  //     !name ||
-  //     name !== sanitizedName ||
-  //     type !== sanitizedType ||
-  //     subCategory !== sanitizedSubCategories ||
-  //     brands !== sanitizedBrands ||
-  //     conditions !== sanitizedConditions ||
-  //     description !== sanitizedDescription ||
-  //     price !== sanitizedprice ||
-  //     stock !== sanitizedStock ||
-  //     categories !== sanitizedCategory
-  //   ) {
-  //     toast.error("Invalid input");
-  //     return set({
-  //       isAdding: false,
-  //     });
-  //   }
-
-  //   // console.log(
-  //   //   "sanitized name: **  ",
-  //   //   sanitizedName,
-  //   //   "sanitized type: **  ",
-  //   //   sanitizedType,
-  //   //   "sanitized sub cat...: **  ",
-  //   //   sanitizedSubCategories,
-  //   //   "sanitized brands: **  ",
-  //   //   sanitizedBrands
-  //   // );
-
-  //   // console.log(
-  //   //   JSON.stringify({
-  //   //     name: sanitizedName,
-  //   //     type: sanitizedType,
-  //   //     subCategories: sanitizedSubCategories,
-  //   //     brands: sanitizedBrands,
-  //   //   })
-  //   // );
-
-  //   try {
-  //     const response = await fetch("/api/categories", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         name: sanitizedName,
-  //         type: sanitizedType,
-  //         subCategories: sanitizedSubCategories,
-  //         brands: sanitizedBrands,
-  //         conditions: sanitizedConditions,
-  //         image: sanitizedImage,
-  //       }),
-  //     });
-
-  //     if (response.ok) {
-  //       toast.success("Category added successfully");
-  //       // await get().fetchData(); // Refetch to update categories
-  //     } else {
-  //       toast.error("Error adding category");
-  //     }
-  //   } catch (error) {
-  //     toast.error("Server Error adding category");
-  //     console.error("Server Error adding category:", error);
-  //   }
-  //   set({ isAdding: false });
-  // },
 
   addProduct: async ({
     name,
@@ -373,7 +275,6 @@ export const useDataStore = create<IData>((set, get) => ({
     const sanitizedName = sanitizeInput(name);
     const sanitizedDescription = sanitizeInput(description);
     const sanitizedPrice = price;
-    // const sanitizedStock = stock;
     const sanitizedCategory = sanitizeInput(categories); // Category related to products
     const sanitizedSubCategory = sanitizeInput(subCategory);
     const sanitizedBrand = sanitizeInput(brands);
@@ -467,8 +368,8 @@ export const useDataStore = create<IData>((set, get) => ({
 
       // Handle response from the backend
       if (response.ok) {
-        get().fetchData();
         toast.success("Product added successfully");
+        get().fetchData();
         // Optionally fetch updated data (like products list) here
       } else {
         toast.error("Error adding product");
@@ -485,11 +386,15 @@ export const useDataStore = create<IData>((set, get) => ({
   updateProduct: async ({
     id,
     name,
-    type,
+    description,
+    price,
+    image, // Images inputted by file input
+    imageUrls,
+    categories, // Product categories
     subCategory,
     brands,
     conditions,
-    image,
+    type,
   }) => {
     set({
       isUpdating: true,
@@ -498,53 +403,51 @@ export const useDataStore = create<IData>((set, get) => ({
     const sanitizedId = sanitizeInput(id);
     const sanitizedName = sanitizeInput(name);
     const sanitizedType = sanitizeInput(type);
-    const sanitizedSubCategories = sanitizeInput(subCategory);
-    const sanitizedBrands = sanitizeInput(brands);
-    const sanitizedConditions = sanitizeInput(conditions);
-    const sanitizedImage = sanitizeTelegramImageURLs(image);
+    const sanitizedImageUrls = sanitizeTelegramImageIDs(imageUrls);
 
-    // console.log("normal value");
-    // console.log(
-    //   "name: ",
-    //   name,
-    //   "id: ",
-    //   id,
-    //   "type: ",
-    //   type,
-    //   "subCategories: ",
-    //   subCategories,
-    //   "brands: ",
-    //   brands,
-    //   "conditions: ",
-    //   conditions,
-    //   "image: ",
-    //   image
-    // );
+    const sanitizedDescription = sanitizeInput(description);
+    const sanitizedCategory = sanitizeInput(categories); // Category related to products
+    const sanitizedSubCategory = sanitizeInput(subCategory);
+    const sanitizedBrand = sanitizeInput(brands);
+    const sanitizedCondition = sanitizeInput(conditions);
 
-    // console.log(
-    //   "sanitized id: **  ",
-    //   sanitizedId,
-    //   "sanitized name: **  ",
-    //   sanitizedName,
-    //   "sanitized type: **  ",
-    //   sanitizedType,
-    //   "sanitized sub cat...: **  ",
-    //   sanitizedSubCategories,
-    //   "sanitized brands: **  ",
-    //   sanitizedBrands,
-    //   "sanitized conditions: **  ",
-    //   sanitizedConditions,
-    //   "sanitized image: **  ",
-    //   sanitizedImage
-    // );
+    console.log("normal value");
+    console.log(
+      "name: ",
+      name,
+      "id: ",
+      id,
+      "type: ",
+      type,
+      "subCategory: ",
+      subCategory,
+      "brands: ",
+      brands,
+      "conditions: ",
+      conditions,
+      "image: ",
+      imageUrls,
+      "sanitized image urls",
+      sanitizedImageUrls
+    );
 
-    if (!id) {
-      toast.error("ID is missing");
+    if (!id || id !== sanitizedId) {
+      toast.error("ID is Invalid or Missing");
       return set({ isUpdating: false });
     }
 
     if (!name) {
       toast.error("Name is missing");
+      return set({ isUpdating: false });
+    }
+
+    // if (!sanitizedImageUrls) {
+    //   toast.error("Something Went wrong with images, refres the page!");
+    //   return set({ isUpdating: false });
+    // }
+
+    if (description !== sanitizedDescription) {
+      toast.error("description is Invalid");
       return set({ isUpdating: false });
     }
 
@@ -558,65 +461,57 @@ export const useDataStore = create<IData>((set, get) => ({
       return set({ isUpdating: false });
     }
 
-    if (subCategory !== sanitizedSubCategories) {
+    if (categories !== sanitizedCategory) {
+      toast.error("Invalid category input");
+      return set({ isUpdating: false });
+    }
+
+    if (subCategory !== sanitizedSubCategory) {
       toast.error("Invalid subcategories input");
       return set({ isUpdating: false });
     }
 
-    if (brands !== sanitizedBrands) {
+    if (brands !== sanitizedBrand) {
       toast.error("Invalid brands input");
       return set({ isUpdating: false });
     }
 
-    if (conditions !== sanitizedConditions) {
+    if (conditions !== sanitizedCondition) {
       toast.error("Invalid conditions input");
       return set({ isUpdating: false });
     }
 
-    if (image !== sanitizedImage) {
-      // toast.error("Invalid image input");
-      return set({ isUpdating: false });
-    }
+    const formData = new FormData();
 
-    if (id !== sanitizedId) {
-      toast.error("ID mismatch or invalid");
-      return set({ isUpdating: false });
-    }
+    if (image)
+      Array.from(image).forEach((file) => formData.append("file", file));
 
-    // console.log("updatind data");
-    // console.log(
-    //   JSON.stringify({
-    //     id: sanitizedId,
-    //     name: sanitizedName,
-    //     type: sanitizedType,
-    //     subCategories: sanitizedSubCategories,
-    //     brands: sanitizedBrands,
-    //     conditions: sanitizedConditions,
-    //     image: sanitizedImage,
-    //   })
-    // );
+    formData.append("id", sanitizedId);
+    formData.append("name", sanitizedName);
+    formData.append("description", sanitizedDescription);
+    formData.append("price", `${price}`);
+    formData.append("category", sanitizedCategory);
+    formData.append("subCategory", sanitizedSubCategory);
+    formData.append("brand", sanitizedBrand);
+    formData.append("condition", sanitizedCondition);
+    formData.append("type", sanitizedType);
+    formData.append("image", imageUrls.join(", "));
 
     try {
-      const response = await fetch("/api/categories", {
+      const response = await fetch("/api/product", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: sanitizedId,
-          name: sanitizedName,
-          type: sanitizedType,
-          subCategories: sanitizedSubCategories,
-          brands: sanitizedBrands,
-          conditions: sanitizedConditions,
-          image: sanitizedImage,
-        }),
+        // headers: {
+        //   "Content-Type": "multipart/form-data",
+        // },
+
+        body: formData,
       });
 
       if (response.ok) {
         toast.success("Category updated successfully");
-        // await get().fetchCategories(); // Refetch to update categories
+        await get().fetchData(); // Refetch to update categories
       } else {
+        console.log(await response.text());
         toast.error("Error updating category");
       }
     } catch (error) {
@@ -640,8 +535,8 @@ export const useDataStore = create<IData>((set, get) => ({
       set({ isDeleting: false });
 
       if (response.ok) {
-        get().fetchData();
         toast.success("Product deleted successfully");
+        get().fetchData();
       } else {
         toast.error("Error deleting Product");
       }
@@ -729,7 +624,7 @@ export const useCategoryStore = create<ICategory>((set, get) => ({
         isLoadding: false,
       });
 
-    console.log("incomming data: ", data);
+    // console.log("incomming data: ", data);
 
     const categories = data.map((item) => {
       const subCategories =
@@ -1018,291 +913,3 @@ export const useCategoryStore = create<ICategory>((set, get) => ({
     }
   },
 }));
-
-// ????????????????????????????????????????????????????????????
-
-// import { create } from "zustand";
-// import { toast } from "sonner";
-
-// interface ICartItem {
-//   id: string;
-//   name: string;
-//   price: number;
-//   quantity: number;
-//   image: string;
-// }
-
-// interface ICart {
-//   cartItems: ICartItem[];
-//   addCartItem: (item: ICartItem) => void;
-//   removeCartItem: (id: string) => void;
-//   increaseQuantity: (id: string) => void;
-//   decreaseQuantity: (id: string) => void;
-//   totalPrice: () => number;
-// }
-
-// interface IDataItem {
-//   id: string;
-//   title: string;
-//   price: number;
-//   // image: string;
-//   image: string[];
-//   description: string;
-// }
-
-// interface LatestTrending {
-//   id: string;
-//   title: string;
-//   price: number;
-//   image: string;
-//   description: string;
-// }
-
-// interface IData {
-//   data: IDataItem[];
-//   latestProducts: LatestTrending[];
-//   trendingItems: LatestTrending[];
-//   fetchData: () => void;
-//   isLoadding: boolean;
-// }
-
-// interface ICategoryData {
-//   label: string;
-//   type?: string;
-//   subCategories?: string;
-//   brands?: string;
-//   condition?: string;
-//   image?: string;
-// }
-
-// interface ICategory {
-//   isLoadding: boolean;
-//   fetchData: () => void;
-//   categories: {
-//     label: string;
-//     type?: string[];
-//     subCategories?: string[];
-//     brands?: { label: string; value: string }[];
-//     condition?: string[];
-//     image?: string;
-//   }[];
-// }
-
-// export const useCartStore = create<ICart>((set, get) => ({
-//   cartItems: [],
-//   addCartItem: (item) => {
-//     set((state) => {
-//       const existingItem = state.cartItems.find((data) => data.id === item.id);
-//       if (existingItem) {
-//         toast.warning(`${existingItem.name} is already in the cart.`);
-//         return {
-//           cartItems: state.cartItems.map((item) =>
-//             item.id === item.id
-//               ? { ...item, quantity: item.quantity + item.quantity }
-//               : item
-//           ),
-//         };
-//       }
-//       toast.success(`${item.name} has been added to the cart.`);
-//       return {
-//         cartItems: [item, ...state.cartItems],
-//       };
-//     });
-//   },
-
-//   removeCartItem: (id) => {
-//     set((state) => ({
-//       cartItems: state.cartItems.filter((item) => item.id !== id),
-//     }));
-//   },
-
-//   increaseQuantity: (id) => {
-//     set((state) => ({
-//       cartItems: state.cartItems.map((item) => {
-//         if (item.id === id) {
-//           return { ...item, quantity: item.quantity + 1 };
-//         }
-//         return item;
-//       }),
-//     }));
-//   },
-//   decreaseQuantity: (id) => {
-//     set((state) => ({
-//       cartItems: state.cartItems.map((item) => {
-//         if (item.id === id && item.quantity > 1) {
-//           return { ...item, quantity: item.quantity - 1 };
-//         }
-//         return item;
-//       }),
-//     }));
-//   },
-//   totalPrice: () => {
-//     return get().cartItems.reduce((total, item) => {
-//       return total + item.price * item.quantity;
-//     }, 0);
-//   },
-// }));
-
-// export const useDataStore = create<IData>((set) => ({
-//   data: [],
-//   latestProducts: [],
-//   trendingItems: [],
-
-//   isLoadding: true,
-//   fetchData: async () => {
-//     const response = await fetch("https://fakestoreapi.com/products");
-//     const data: IDataItem[] = await response.json();
-
-//     if (!data)
-//       return set({
-//         data: [],
-//         latestProducts: [],
-//         trendingItems: [],
-//         isLoadding: false,
-//       });
-
-//     const latestProducts = data.slice(0, 5).map((item) => {
-//       return {
-//         ...item,
-//         image: typeof item.image === "string" ? item.image : item.image[0],
-//       };
-//     });
-
-//     const trendingItems = data.slice(5).map((item) => {
-//       return {
-//         ...item,
-//         image: typeof item.image === "string" ? item.image : item.image[0],
-//       };
-//     });
-
-//     set({
-//       data,
-//       latestProducts,
-//       trendingItems,
-//       isLoadding: false,
-//     });
-//   },
-// }));
-
-// export const useCategoryStore = create<ICategory>((set) => ({
-//   categories: [
-//     {
-//       label: "clothing",
-//       type: ["mens", "womens", "unsexy"],
-//       subCategories: [
-//         "top wears",
-//         "bottom wears",
-//         "underwears",
-//         "dress",
-//         "skirt",
-//       ],
-//       brands: [
-//         { label: "Nike", value: "Nike" },
-//         { label: "Adidas", value: "Adidas" },
-//         { label: "Crux", value: "Crux" },
-//       ],
-//     },
-//     {
-//       label: "mobiles",
-//       type: ["button", "smart"],
-//       brands: [
-//         { label: "Apple", value: "Apple" },
-//         { label: "Samsung", value: "Samsung" },
-//         { label: "Techno", value: "Techno" },
-//         { label: "Motorolla", value: "Motorolla" },
-//         { label: "Blu", value: "Blu" },
-//       ],
-//       condition: ["new", "refurbished", "used"],
-//     },
-//     {
-//       label: "laptop",
-//       type: ["gaming", "office", "budget"],
-//       brands: [
-//         { label: "Hp", value: "Hp" },
-//         { label: "Toshiba", value: "Toshiba" },
-//         { label: "Dell", value: "Dell" },
-//         { label: "Vivo", value: "Vivo" },
-//         { label: "Microsoft", value: "Microsoft" },
-//         { label: "Acer", value: "Acer" },
-//       ],
-//       condition: ["new", "refurbished", "used"],
-//     },
-//     {
-//       label: "books",
-//     },
-//   ],
-//   isLoadding: true,
-//   fetchData: async () => {
-//     // const response = await fetch("/api/categories");
-//     // const data: ICategoryData[] = await response.json();
-
-//     // if (!data)
-//     //   return set({
-//     //     categories: [],
-//     //     isLoadding: false,
-//     //   });
-
-//     const data = [
-//       {
-//         label: "clothing",
-//         type: "mens, womens, unsexy",
-//         subCategories: " top wears, bottom wears, underwears, dress, skirt",
-//         brands: "Nike, Addidas, Crux",
-//       },
-//       {
-//         label: "mobiles",
-//         type: "button, smart",
-//         brands: "Apple, Samsung, Techno, Motorolla, Blu",
-
-//         condition: "new, refurbished, used",
-//       },
-//       {
-//         label: "laptop",
-//         type: "gaming, office, budget",
-//         brands: "Hp, Toshiba, Dell, Vivo, Microsoft, Acer",
-//         condition: "new, refurbished, used",
-//       },
-//       {
-//         label: "books",
-//       },
-//     ];
-
-//     // const categories = data.map((item) => {
-//     //   const subCategories =
-//     //     item.subCategories?.split(", ").map((item) => item.trim()) || [];
-//     //   const brands =
-//     //     item.brands?.split(", ").map((brand) => ({
-//     //       label: brand.trim(),
-//     //       value: brand.trim(),
-//     //     })) || [];
-//     //   const condition =
-//     //     item.condition?.split(", ").map((item) => item.trim()) || [];
-//     //   const types = item.type?.split(", ").map((item) => item.trim()) || [];
-
-//     //   console.log("brands: **  ", brands);
-
-//     //   return { ...item, subCategories, brands, condition, types };
-//     // });
-//     const categories = data.map((item) => ({
-//       label: item.label,
-//       subCategories: item.subCategories
-//         ? item.subCategories.split(", ").map((s) => s.trim())
-//         : [],
-//       brands: item.brands
-//         ? item.brands
-//             .split(", ")
-//             .map((brand) => ({ label: brand.trim(), value: brand.trim() }))
-//         : [],
-//       condition: item.condition
-//         ? item.condition.split(", ").map((c) => c.trim())
-//         : [],
-//       types: item.type ? item.type.split(", ").map((t) => t.trim()) : [],
-//     }));
-//     console.log("Categories: ** ", categories);
-
-//     set({
-//       categories,
-//       isLoadding: false,
-//     });
-//   },
-// }));

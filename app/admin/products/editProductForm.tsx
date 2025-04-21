@@ -4,9 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import Image from "next/image";
-import { Trash2 } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
+import { useDataStore } from "@/store";
+import { LoadingButton } from "@/components/loaddingButton";
 
 interface IProduct {
+  id: string;
   name: string;
   price: number;
   description: string;
@@ -28,10 +31,10 @@ interface ICategory {
 
 interface IProductForm {
   product: IProduct;
-  onSubmit: (product: IProduct) => void;
+  // onSubmit: (product: IProduct) => void;
 }
 
-const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
+const EditProductForm: FC<IProductForm> = ({ product }) => {
   const [initialProduct, setProduct] = useState<IProduct>(product);
   const [category, setCategory] = useState<ICategory>({
     category: product.category,
@@ -41,10 +44,13 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
     condition: product.condition,
   });
 
-  const [imageUrls, setImageUrls] = useState(initialProduct?.imageUrls || []);
+  const { isUpdating, updateProduct } = useDataStore();
+
   const [imagePreviews, setImagePreviews] = useState<string[]>(
     initialProduct?.imageUrls || []
   );
+
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   // Handle text input changes
   const handleInputChange = (
@@ -55,27 +61,60 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
   };
 
   // Handle image upload and preview
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files) {
-      const newImageUrls = Array.from(files).map((file) =>
-        URL.createObjectURL(file)
-      );
-      setImageUrls((prev) => [...prev, ...newImageUrls]);
-      setImagePreviews((prev) => [...prev, ...newImageUrls]);
-    }
-  };
+  // const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const files = e.target.files;
+  //   if (files) {
+  //     setSelectedFiles(files);
+  //     const newImageUrls = Array.from(files).map((file) =>
+  //       URL.createObjectURL(file)
+  //     );
+  //     setImagePreviews((prev) => [...prev, ...newImageUrls]);
+  //   }
+  // };
 
   // Handle image removal
   const handleRemoveImage = (index: number) => {
-    setImageUrls((prev) => prev.filter((_, i) => i !== index));
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
+
+    if (selectedFiles) {
+      const newFiles = Array.from(selectedFiles).filter((_, i) => i !== index);
+      setSelectedFiles(
+        newFiles.length > 0 ? (newFiles as unknown as FileList) : null
+      );
+    }
   };
 
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...initialProduct, imageUrls });
+
+    interface IUpdatingProduct {
+      id: string;
+      name: string;
+      description: string;
+      price: number;
+      stock?: number;
+      imageUrls: string[];
+      image?: FileList;
+      categories: string;
+      type: string;
+      subCategory: string;
+      brands: string;
+      conditions: string;
+    }
+
+    const onUpdatingProduct: IUpdatingProduct = {
+      ...initialProduct,
+      imageUrls: imagePreviews,
+      categories: category.category,
+      subCategory: category.subCategory,
+      type: category.types,
+      brands: category.brands,
+      conditions: category.condition,
+      image: selectedFiles || undefined,
+    };
+
+    updateProduct(onUpdatingProduct);
   };
 
   return (
@@ -131,7 +170,6 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
                   <Image
                     width={100}
                     height={100}
-                    // src={image}
                     src={`/api/telegram-file?fileId=${image}`}
                     alt={`Preview ${index}`}
                     className="w-16 h-16 object-cover rounded-md cursor-pointer"
@@ -145,7 +183,8 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
                   </button>
                 </div>
               ))}
-              <Label htmlFor="image-upload" className="cursor-pointer">
+
+              {/*<Label htmlFor="image-upload" className="cursor-pointer">
                 Upload Images
               </Label>
               <Input
@@ -155,8 +194,12 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
                 onChange={handleImageChange}
                 multiple
                 className="hidden"
-              />
+              /> */}
             </div>
+          </div>
+          <div className="text-red-600 text-xs italic">
+            * i.e. Any image changes {`won't`} affect the{" "}
+            <span className="font-bold text-blue-600">telegram </span>group
           </div>
         </div>
 
@@ -168,12 +211,17 @@ const EditProductForm: FC<IProductForm> = ({ product, onSubmit }) => {
       </div>
 
       {/* Submit Button */}
-      <button
+
+      <LoadingButton
         type="submit"
-        className="bg-blue-500 text-white p-2 rounded-md w-full"
+        loading={isUpdating}
+        LoadingText="Updating Product..."
+        title="Update Product"
+        className="w-full"
+        variant="secondary"
       >
-        Update Product
-      </button>
+        <PlusCircle className="h-4 w-4 text-green-500 mr-2" /> Update Product
+      </LoadingButton>
     </form>
   );
 };

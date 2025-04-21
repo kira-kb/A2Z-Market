@@ -58,7 +58,7 @@ export default function ProductCard({
       >
         {/* <Suspense fallback={<ImgLoader />}> */}
         <Image
-          src={image}
+          src={`/api/telegram-file?fileId=${image}`}
           alt={name || "image"}
           width={1000000}
           height={1000000}

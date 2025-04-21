@@ -111,7 +111,7 @@ const Navbar = () => {
                           className="flex items-center space-x-4 border-b-2 border-slate-300 py-1"
                         >
                           <Image
-                            src={item.image}
+                            src={`/api/telegram-file?fileId=${item.image}`}
                             alt={item.name}
                             height={100}
                             width={100}

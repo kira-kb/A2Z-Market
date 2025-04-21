@@ -190,7 +190,7 @@ function AdminProductsPage() {
     return product;
   });
 
-  console.log("filtered products:  ", filteredProducts);
+  // console.log("filtered products:  ", filteredProducts);
 
   const handleEditProduct = (product: Product) => {
     const editProduct: EditProduct = {
@@ -412,10 +412,7 @@ const ProductDialog = ({
                 Make changes to your product here.{" "}
               </DialogDescription>
             </DialogHeader>
-            <EditProductForm
-              product={product}
-              onSubmit={(e) => console.log(e)}
-            />
+            <EditProductForm product={product} />
           </>
         ) : (
           <>

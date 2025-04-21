@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "lib/generatedPrismaClient"
+}
+
+datasource db {
+  provider = "postgresql" // Or your preferred database provider
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  phone      String?
+  address    String?
+  country    String?
+  city       String?
+  postalCode String?
+  orders     Order[]
+  Cart       Cart?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  stock       Int?
+  image       String[] // Can be URL to product image
+  tgMsgId     Int[]
+
+  categories  Category[]  @relation("ProductCategories")
+  type        String?
+  subCategory String?
+  brands      String?
+  conditions  String?
+  orders      OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  CartItem    CartItem[]
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique()
+  type        String? // Category type, e.g., 'Men', 'Women', 'Kids'
+  subCategory String? // Sub-category like 'Tops', 'Bottoms'
+  products    Product[] @relation("ProductCategories")
+  brands      String?
+  conditions  String?
+  image       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  // brands      Brand[]   @relation("CategoryBrands")
+}
+
+// model Brand {
+//   id          String     @id @default(uuid())
+//   name        String
+//   description String?
+//   categories  Category[] @relation("CategoryBrands")
+//   products    Product[]
+// }
+
+model Cart {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    String     @unique
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  quantity  Int
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  cartId    String
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  user        User        @relation(fields: [userId], references: [id])
+  userId      String
+  items       OrderItem[]
+  totalAmount Float
+  status      String // Status like 'pending', 'shipped', 'delivered', etc.
+  createdAt   DateTime    @default(now())
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   String
+  quantity  Int
+  price     Float // Price at the time of purchase
+}

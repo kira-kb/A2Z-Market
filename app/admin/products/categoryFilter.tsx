@@ -7,13 +7,11 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-// import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useCategoryStore } from "@/store";
 
 interface ICategory {
-  // categoryId: string
   category: string;
   subCategory: string;
   types: string;
@@ -91,13 +89,6 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
     fetchCategories();
   }, [fetchCategories]);
 
-  // const handleBrandChange = (brand: string) => {
-  //   setCategories((prev) => ({
-  //     ...prev,
-  //     brands: brand,
-  //   }));
-  // };
-
   const selectedCategoryData = categories.find(
     (cat) => cat.name === category.category
   );
@@ -111,6 +102,7 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
         </label>
         <Select
           required
+          value={category.category}
           onValueChange={(value) =>
             setCategories({
               subCategory: "",
@@ -124,9 +116,13 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
           <SelectTrigger className="w-full border-[1px] border-gray-300 p-2">
             <span>{category.category || "Select Category"}</span>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent defaultValue={category.category}>
             {categories.map((category) => (
-              <SelectItem key={category.id} value={category.name}>
+              <SelectItem
+                key={category.id}
+                defaultValue={category.name}
+                value={category.name}
+              >
                 {category.name}
               </SelectItem>
             ))}
@@ -143,6 +139,7 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
             </label>
             <Select
               required
+              value={category.subCategory}
               onValueChange={(value) =>
                 setCategories((prev) => ({ ...prev, subCategory: value }))
               }
@@ -179,7 +176,11 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
                   className="flex items-center space-x-2 cursor-pointer"
                   key={radioType}
                 >
-                  <RadioGroupItem value={radioType} id={radioType} />
+                  <RadioGroupItem
+                    value={radioType}
+                    checked={radioType === category.types}
+                    id={radioType}
+                  />
                   <Label className="cursor-pointer" htmlFor={radioType}>
                     {radioType}
                   </Label>
@@ -198,6 +199,7 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
             </label>
             <Select
               required
+              value={category.brands}
               onValueChange={(value) =>
                 setCategories((prev) => ({ ...prev, brands: value }))
               }
@@ -225,6 +227,7 @@ const CategoryFilter: FC<ICategoryFilter> = ({ category, setCategories }) => {
             </label>
             <Select
               required
+              value={category.condition}
               onValueChange={(value) =>
                 setCategories((prev) => ({ ...prev, condition: value }))
               }
