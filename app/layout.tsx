@@ -9,6 +9,7 @@ import favIcon from "@/app/favicon.png";
 import { ClerkProvider } from "@clerk/nextjs";
 
 import { Toaster } from "sonner";
+import SyncUser from "@/components/syncUser";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default function RootLayout({
             <Navbar />
             <main className="mt-16">{children}</main>
             <Footer />
+            <SyncUser />
           </ThemeProvider>
         </body>
       </html>

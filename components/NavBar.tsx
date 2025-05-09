@@ -8,7 +8,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { ThemeButton } from "./ThemeButton";
 import Image from "next/image";
 import Link from "next/link";
@@ -24,17 +24,27 @@ const Navbar = () => {
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   // const [searchQuery, setSearchQuery] = useState("");
 
-  // const [authStat, setAuthStat] = useState(false);
-
   const {
     cartItems,
     totalPrice,
     increaseQuantity: incrementQuantity,
     decreaseQuantity: decrementQuantity,
     removeCartItem: removeItem,
+    setUserId,
+    syncLocalToServer,
   } = useCartStore();
 
   const user = useUser();
+  const userId = user.user?.id;
+
+  useEffect(() => {
+    if (userId) {
+      setUserId(userId);
+      syncLocalToServer();
+    }
+  }, [userId]);
+
+  console.log("cart items: ", cartItems);
 
   return (
     <nav
@@ -112,7 +122,7 @@ const Navbar = () => {
                         >
                           <Image
                             src={`/api/telegram-file?fileId=${item.image}`}
-                            alt={item.name}
+                            alt={item.name || "product image"}
                             height={100}
                             width={100}
                             className="w-16 h-16 object-cover rounded-lg"

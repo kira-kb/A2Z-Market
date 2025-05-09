@@ -20,7 +20,7 @@ function Shop() {
     fetchData();
   }, [fetchData]);
 
-  console.log(data);
+  // console.log(data);
   // return <CategoryFilter />;
 
   return (

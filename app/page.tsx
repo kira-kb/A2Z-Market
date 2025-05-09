@@ -9,15 +9,8 @@ import Image from "next/image";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-// import CheckSign from "./checkSign";
-// import { PrismaClient } from "@prisma/client";
 
 export default async function Home() {
-  // const prisma = new PrismaClient();
-
-  // const account = await prisma.account.findMany();
-  // console.log(account);
-
   return (
     <div
       className={`min-h-screen dark:bg-gray-900 dark:text-white bg-gray-100 text-gray-800 pb-12 relative z-0 transition-colors duration-300`}

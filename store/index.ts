@@ -1,22 +1,23 @@
 import { create } from "zustand";
 import { toast } from "sonner";
+// import { currentUser } from "@clerk/nextjs/server";
 
-interface ICartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-}
+// interface ICartItem {
+//   id: string;
+//   name: string;
+//   price: number;
+//   quantity: number;
+//   image: string;
+// }
 
-interface ICart {
-  cartItems: ICartItem[];
-  addCartItem: (item: ICartItem) => void;
-  removeCartItem: (id: string) => void;
-  increaseQuantity: (id: string) => void;
-  decreaseQuantity: (id: string) => void;
-  totalPrice: () => number;
-}
+// interface ICart {
+//   cartItems: ICartItem[];
+//   addCartItem: (item: ICartItem) => void;
+//   removeCartItem: (id: string) => void;
+//   increaseQuantity: (id: string) => void;
+//   decreaseQuantity: (id: string) => void;
+//   totalPrice: () => number;
+// }
 
 interface IDataItem {
   id: string;
@@ -122,6 +123,29 @@ interface ICategory {
   }[];
 }
 
+interface CartItem {
+  id: string;
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+  productId: string;
+}
+
+interface ICart {
+  cartItems: CartItem[];
+  userId: string | null;
+  cartId: string | null;
+  setUserId: (id: string | null) => void;
+  addCartItem: (item: CartItem) => void;
+  removeCartItem: (id: string) => void;
+  increaseQuantity: (id: string) => void;
+  decreaseQuantity: (id: string) => void;
+  totalPrice: () => number;
+  syncLocalToServer: () => Promise<void>;
+  fetchServerCart: () => Promise<void>;
+}
+
 const sanitizeInput = (input: string) => {
   const regex = /^[a-zA-Z0-9 !@#$%&*()+\-\/"',|=]*$/; // Allowed characters
   const sanitizedData = regex.test(input);
@@ -154,58 +178,255 @@ function sanitizeTelegramImageIDs(imageIDs: string[]) {
   return allValid;
 }
 
+// export const useCartStore = create<CartStore>((set, get) => ({
+//   cartId: null,
+//   cartItems: [],
+
+//   fetchCart: async (userId) => {
+//     try {
+//       const res = await fetch(`/api/cart?userId=${userId}`);
+//       const data = await res.json();
+//       if (data?.id) {
+//         set({ cartId: data.id, cartItems: data.items });
+//       }
+//     } catch (error) {
+//       console.error("Error fetching cart:", error);
+//     }
+//   },
+
+//   addCartItem: async (item, userId) => {
+//     const { cartItems, cartId } = get();
+
+//     if (!cartId) {
+//       // Create cart if not exists
+//       const res = await fetch("/api/cart", {
+//         method: "POST",
+//         body: JSON.stringify({ userId }),
+//       });
+//       const newCart = await res.json();
+//       set({ cartId: newCart.id });
+//     }
+
+//     const existingItem = cartItems.find((i) => i.productId === item.productId);
+//     if (existingItem) {
+//       toast.warning(`${item.name} is already in the cart. Quantity updated.`);
+
+//       await fetch("/api/cart", {
+//         method: "PATCH",
+//         body: JSON.stringify({
+//           itemId: existingItem.id,
+//           quantity: existingItem.quantity + item.quantity,
+//         }),
+//       });
+
+//       set({
+//         cartItems: cartItems.map((cartItem) =>
+//           cartItem.id === existingItem.id
+//             ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+//             : cartItem
+//         ),
+//       });
+//       return;
+//     }
+
+//     const res = await fetch("/api/cart", {
+//       method: "PUT",
+//       body: JSON.stringify({
+//         cartId: get().cartId,
+//         productId: item.productId,
+//         quantity: item.quantity,
+//       }),
+//     });
+//     const created = await res.json();
+
+//     toast.success(`${item.name} has been added to the cart.`);
+//     set({ cartItems: [created, ...get().cartItems] });
+//   },
+
+//   removeCartItem: async (itemId) => {
+//     await fetch("/api/cart", {
+//       method: "DELETE",
+//       body: JSON.stringify({ itemId }),
+//     });
+
+//     set((state) => ({
+//       cartItems: state.cartItems.filter((item) => item.id !== itemId),
+//     }));
+//   },
+
+//   increaseQuantity: (id) => {
+//     set((state) => ({
+//       cartItems: state.cartItems.map((item) =>
+//         item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+//       ),
+//     }));
+//   },
+
+//   decreaseQuantity: (id) => {
+//     set((state) => ({
+//       cartItems: state.cartItems.map((item) =>
+//         item.id === id && item.quantity > 1
+//           ? { ...item, quantity: item.quantity - 1 }
+//           : item
+//       ),
+//     }));
+//   },
+
+//   totalPrice: () => {
+//     return get().cartItems.reduce(
+//       (total, item) => total + item.price * item.quantity,
+//       0
+//     );
+//   },
+// }));
+
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  productId: string;
+  product: IDataItem;
+}
+
+interface ICart {
+  cartItems: CartItem[];
+  userId: string | null;
+  cartId: string | null;
+  setUserId: (id: string | null) => void;
+  addCartItem: (item: CartItem) => void;
+  removeCartItem: (id: string) => void;
+  increaseQuantity: (id: string) => void;
+  decreaseQuantity: (id: string) => void;
+  totalPrice: () => number;
+  syncLocalToServer: () => Promise<void>;
+  fetchServerCart: () => Promise<void>;
+}
+
 export const useCartStore = create<ICart>((set, get) => ({
-  cartItems: [],
+  cartItems:
+    typeof window !== "undefined" && localStorage.getItem("a2z-cart")
+      ? JSON.parse(localStorage.getItem("a2z-cart")!)
+      : [],
+  userId: null,
+  cartId: null,
+
+  setUserId: (id) => {
+    set({ userId: id });
+  },
+
   addCartItem: (item) => {
-    set((state) => {
-      const existingItem = state.cartItems.find((data) => data.id === item.id);
-      if (existingItem) {
-        toast.warning(`${existingItem.name} is already in the cart.`);
-        return {
-          cartItems: state.cartItems.map((cartItem) =>
-            cartItem.id === item.id
-              ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
-              : cartItem
-          ),
-        };
-      }
+    const { cartItems, userId, cartId } = get();
+
+    const existingItem = cartItems.find((i) => i.id === item.id);
+    let updatedItems: CartItem[];
+
+    if (existingItem) {
+      updatedItems = cartItems.map((cartItem) =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+          : cartItem
+      );
+      toast.warning(`${item.name} is already in the cart. Quantity updated.`);
+    } else {
+      updatedItems = [item, ...cartItems];
       toast.success(`${item.name} has been added to the cart.`);
-      return {
-        cartItems: [item, ...state.cartItems],
-      };
-    });
+    }
+
+    set({ cartItems: updatedItems });
+    if (!userId) {
+      localStorage.setItem("a2z-cart", JSON.stringify(updatedItems));
+    } else {
+      // Sync to DB
+
+      console.log("item: ", item);
+      fetch("/api/cart", {
+        method: "PUT",
+        body: JSON.stringify({
+          cartId,
+          productId: item.id,
+          quantity: item.quantity,
+        }),
+      });
+    }
   },
 
   removeCartItem: (id) => {
-    set((state) => ({
-      cartItems: state.cartItems.filter((item) => item.id !== id),
-    }));
+    const { cartItems, userId } = get();
+    const updatedItems = cartItems.filter((item) => item.id !== id);
+    set({ cartItems: updatedItems });
+
+    if (!userId) {
+      localStorage.setItem("a2z-cart", JSON.stringify(updatedItems));
+    } else {
+      const itemToDelete = cartItems.find((i) => i.id === id);
+      if (itemToDelete) {
+        fetch("/api/cart", {
+          method: "DELETE",
+          body: JSON.stringify({ cartItemId: itemToDelete.id }),
+        });
+      }
+    }
   },
 
   increaseQuantity: (id) => {
-    set((state) => ({
-      cartItems: state.cartItems.map((item) => {
-        if (item.id === id) {
-          return { ...item, quantity: item.quantity + 1 };
-        }
-        return item;
-      }),
-    }));
+    const { cartItems } = get();
+    const updatedItems = cartItems.map((item) =>
+      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+    );
+    set({ cartItems: updatedItems });
   },
+
   decreaseQuantity: (id) => {
-    set((state) => ({
-      cartItems: state.cartItems.map((item) => {
-        if (item.id === id && item.quantity > 1) {
-          return { ...item, quantity: item.quantity - 1 };
-        }
-        return item;
-      }),
-    }));
+    const { cartItems } = get();
+    const updatedItems = cartItems.map((item) =>
+      item.id === id && item.quantity > 1
+        ? { ...item, quantity: item.quantity - 1 }
+        : item
+    );
+    set({ cartItems: updatedItems });
   },
+
   totalPrice: () => {
-    return get().cartItems.reduce((total, item) => {
-      return total + item.price * item.quantity;
-    }, 0);
+    return get().cartItems.reduce(
+      (total, item) => total + item.price * item.quantity,
+      0
+    );
+  },
+
+  fetchServerCart: async () => {
+    const { userId } = get();
+    if (!userId) return;
+    const res = await fetch(`/api/cart?userId=${userId}`);
+    const data = await res.json();
+    set({ cartItems: data.items || [], cartId: data.id });
+  },
+
+  syncLocalToServer: async () => {
+    const { userId, cartItems, fetchServerCart } = get();
+    if (!userId) return;
+
+    const res = await fetch(`/api/cart?userId=${userId}`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    // console.log("cart id", data);
+    const cartId = data.id;
+
+    // Push localStorage items
+    for (const item of cartItems) {
+      await fetch("/api/cart", {
+        method: "PUT",
+        body: JSON.stringify({
+          cartId,
+          productId: item.productId,
+          quantity: item.quantity,
+        }),
+      });
+    }
+
+    localStorage.removeItem("a2z-cart");
+    await fetchServerCart();
   },
 }));
 
@@ -913,3 +1134,65 @@ export const useCategoryStore = create<ICategory>((set, get) => ({
     }
   },
 }));
+
+// ??????????????????????????????????????????
+// ??????????????????????????????????????????
+// ??????????????????????????????????????????
+
+// export const useCartStore = create<ICart>((set, get) => ({
+//   cartItems: [],
+//   addCartItem: (item) => {
+//     set((state) => {
+//       const existingItem = state.cartItems.find((data) => data.id === item.id);
+//       if (existingItem) {
+//         toast.warning(`${existingItem.name} is already in the cart.`);
+//         return {
+//           cartItems: state.cartItems.map((cartItem) =>
+//             cartItem.id === item.id
+//               ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+//               : cartItem
+//           ),
+//         };
+//       }
+//       toast.success(`${item.name} has been added to the cart.`);
+//       return {
+//         cartItems: [item, ...state.cartItems],
+//       };
+//     });
+//   },
+
+//   removeCartItem: (id) => {
+//     set((state) => ({
+//       cartItems: state.cartItems.filter((item) => item.id !== id),
+//     }));
+//   },
+
+//   increaseQuantity: (id) => {
+//     set((state) => ({
+//       cartItems: state.cartItems.map((item) => {
+//         if (item.id === id) {
+//           return { ...item, quantity: item.quantity + 1 };
+//         }
+//         return item;
+//       }),
+//     }));
+//   },
+//   decreaseQuantity: (id) => {
+//     set((state) => ({
+//       cartItems: state.cartItems.map((item) => {
+//         if (item.id === id && item.quantity > 1) {
+//           return { ...item, quantity: item.quantity - 1 };
+//         }
+//         return item;
+//       }),
+//     }));
+//   },
+//   totalPrice: () => {
+//     return get().cartItems.reduce((total, item) => {
+//       return total + item.price * item.quantity;
+//     }, 0);
+//   },
+// }));
+
+// import { create } from "zustand";
+// import { toast } from "react-hot-toast";
