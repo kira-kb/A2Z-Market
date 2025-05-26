@@ -56,3 +56,50 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    // console.log("getting users");
+    const users = await prisma.user.findMany();
+    // console.log("users: ", users);
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error("Getting users error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const { id, phone, address, country, city, postalCode } = await req.json();
+
+    if (!phone || !id)
+      return NextResponse.json(
+        { msg: "phone number is mandatory" },
+        { status: 403 }
+      );
+
+    await prisma.user.updateMany({
+      where: { id },
+      data: {
+        phone,
+        address,
+        country,
+        city,
+        postalCode,
+        // email,
+      },
+    });
+
+    return NextResponse.json({ msg: "Info Updated" }, { status: 200 });
+  } catch (error) {
+    console.error("Updatting users error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}

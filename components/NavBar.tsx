@@ -117,22 +117,22 @@ const Navbar = () => {
                     <ul className="space-y-4 max-h-[60vh] overflow-y-scroll p-2">
                       {cartItems.map((item) => (
                         <li
-                          key={item.id}
+                          key={item.product.id}
                           className="flex items-center space-x-4 border-b-2 border-slate-300 py-1"
                         >
                           <Image
-                            src={`/api/telegram-file?fileId=${item.image}`}
-                            alt={item.name || "product image"}
+                            src={`/api/telegram-file?fileId=${item.product.image[0]}`}
+                            alt={item.product.name || "product image"}
                             height={100}
                             width={100}
                             className="w-16 h-16 object-cover rounded-lg"
                           />
                           <div className="flex-1">
                             <h4 className="text-sm font-semibold">
-                              {item.name}
+                              {item.product.name}
                             </h4>
                             <div className="flex items-center justify-between mt-2">
-                              <span>${item.price}</span>
+                              <span>${item.product.price}</span>
                               <div className="flex items-center space-x-2">
                                 <Button
                                   variant="outline"

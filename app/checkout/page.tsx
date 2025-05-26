@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,24 +19,55 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCartStore } from "@/store";
+import { useCartStore, useUserStore } from "@/store";
 import Link from "next/link";
+import { Label } from "@/components/ui/label";
+import { Building2, Earth, Mail, MapPin, MapPinned, Phone } from "lucide-react";
+import { LoadingButton } from "@/components/loaddingButton";
 
 const CheckoutPage = () => {
+  const { users, fetchUsers, isLoadding, updateUsers } = useUserStore();
+
   const [shippingInfo, setShippingInfo] = useState({
-    name: "",
+    email: "",
     address: "",
     city: "",
     country: "",
     postalCode: "",
     phone: "",
   });
+
+  useEffect(() => {
+    const loader = async () => {
+      console.log("fetching user");
+      await fetchUsers();
+
+      console.log(users);
+
+      if (users) {
+        setShippingInfo({
+          email: users.email,
+          address: users.address,
+          city: users.city,
+          country: users.country,
+          postalCode: users.postalCode,
+          phone: users.phone,
+        });
+      }
+    };
+    loader();
+  }, [fetchUsers]);
+
   const [paymentMethod, setPaymentMethod] = useState("");
 
   const { cartItems, totalPrice } = useCartStore();
 
   const handleShippingInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShippingInfo({ ...shippingInfo, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateInfo = () => {
+    updateUsers({ ...shippingInfo, id: users.id });
   };
 
   const handleSubmitOrder = () => {
@@ -51,44 +82,90 @@ const CheckoutPage = () => {
         {/* Shipping Information */}
         <Card>
           <CardContent>
-            <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
+            <h2 className="text-xl font-semibold mb-4 flex mt-2">
+              Shipping Information{" "}
+              <LoadingButton
+                className="ml-auto"
+                loading={isLoadding}
+                LoadingText="Updating..."
+                onClick={handleUpdateInfo}
+              >
+                Update
+              </LoadingButton>
+            </h2>
             <div className="flex flex-col gap-4">
-              <Input
-                placeholder="Full Name"
-                name="name"
-                value={shippingInfo.name}
-                onChange={handleShippingInfoChange}
-              />
-              <Input
-                placeholder="Address"
-                name="address"
-                value={shippingInfo.address}
-                onChange={handleShippingInfoChange}
-              />
-              <Input
-                placeholder="City"
-                name="city"
-                value={shippingInfo.city}
-                onChange={handleShippingInfoChange}
-              />
-              <Input
-                placeholder="Country"
-                name="country"
-                value={shippingInfo.country}
-                onChange={handleShippingInfoChange}
-              />
-              <Input
-                placeholder="Postal Code"
-                name="postalCode"
-                value={shippingInfo.postalCode}
-                onChange={handleShippingInfoChange}
-              />
-              <Input
-                placeholder="Phone Number"
-                name="phone"
-                value={shippingInfo.phone}
-                onChange={handleShippingInfoChange}
-              />
+              <div className="w-full flex gap-2 flex-nowrap items-center justify-center">
+                <Label className="text-gray-500" htmlFor="email">
+                  <Mail />{" "}
+                </Label>
+                <Input
+                  placeholder="Email"
+                  name="email"
+                  disabled
+                  value={shippingInfo.email}
+                  onChange={handleShippingInfoChange}
+                />
+              </div>
+
+              <div className="w-full flex gap-2 flex-nowrap items-center justify-center">
+                <Label className="text-gray-500" htmlFor="address">
+                  <MapPinned />{" "}
+                </Label>
+                <Input
+                  placeholder="Address"
+                  name="address"
+                  value={shippingInfo.address}
+                  onChange={handleShippingInfoChange}
+                />
+              </div>
+
+              <div className="w-full flex gap-2 flex-nowrap items-center justify-center">
+                <Label className="text-gray-500" htmlFor="city">
+                  <Building2 />{" "}
+                </Label>
+                <Input
+                  placeholder="City"
+                  name="city"
+                  value={shippingInfo.city}
+                  onChange={handleShippingInfoChange}
+                />
+              </div>
+
+              <div className="w-full flex gap-2 flex-nowrap items-center justify-center">
+                <Label className="text-gray-500" htmlFor="country">
+                  <Earth />{" "}
+                </Label>
+                <Input
+                  placeholder="Country"
+                  name="country"
+                  value={shippingInfo.country}
+                  onChange={handleShippingInfoChange}
+                />
+              </div>
+
+              <div className="w-full flex gap-2 flex-nowrap items-center justify-center">
+                <Label className="text-gray-500" htmlFor="postalCode">
+                  <MapPin />{" "}
+                </Label>
+                <Input
+                  placeholder="Postal Code"
+                  name="postalCode"
+                  value={shippingInfo.postalCode}
+                  onChange={handleShippingInfoChange}
+                />
+              </div>
+
+              <div className="w-full flex gap-2 flex-nowrap items-center justify-center">
+                <Label className="text-gray-500" htmlFor="phone">
+                  <Phone />{" "}
+                </Label>
+                <Input
+                  placeholder="Phone Number"
+                  name="phone"
+                  value={shippingInfo.phone}
+                  onChange={handleShippingInfoChange}
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -103,9 +180,11 @@ const CheckoutPage = () => {
                   <SelectValue placeholder="Select Payment Method" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Credit Card">Credit Card</SelectItem>
-                  <SelectItem value="PayPal">PayPal</SelectItem>
-                  <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                  <SelectItem disabled value="POD">
+                    Pay on delivery
+                  </SelectItem>
+                  <SelectItem value="Telebirr">Telebirr</SelectItem>
+                  <SelectItem value="CBE">CBE</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -130,12 +209,12 @@ const CheckoutPage = () => {
                   <TableRow key={item.id}>
                     <TableCell>
                       <Link href={`/shop/${item.id}`}>
-                        {i + 1} &nbsp;{item.name}
+                        {i + 1} &nbsp;{item.product.name}
                       </Link>
                     </TableCell>
-                    <TableCell>${item.price}</TableCell>
+                    <TableCell>${item.product.price}</TableCell>
                     <TableCell>{item.quantity}</TableCell>
-                    <TableCell>${item.price * item.quantity}</TableCell>
+                    <TableCell>${item.product.price * item.quantity}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -130,6 +130,7 @@ interface CartItem {
   price: number;
   quantity: number;
   productId: string;
+  product: IDataItem;
 }
 
 interface ICart {
@@ -360,10 +361,11 @@ export const useCartStore = create<ICart>((set, get) => ({
       localStorage.setItem("a2z-cart", JSON.stringify(updatedItems));
     } else {
       const itemToDelete = cartItems.find((i) => i.id === id);
+      // console.log("item to delete id: ", itemToDelete);
       if (itemToDelete) {
         fetch("/api/cart", {
           method: "DELETE",
-          body: JSON.stringify({ cartItemId: itemToDelete.id }),
+          body: JSON.stringify({ itemId: itemToDelete.id }),
         });
       }
     }
@@ -389,7 +391,7 @@ export const useCartStore = create<ICart>((set, get) => ({
 
   totalPrice: () => {
     return get().cartItems.reduce(
-      (total, item) => total + item.price * item.quantity,
+      (total, item) => total + item.product.price * item.quantity,
       0
     );
   },
@@ -1132,6 +1134,134 @@ export const useCategoryStore = create<ICategory>((set, get) => ({
       toast.error("Server Error deleting category");
       console.error("Server Error deleting category:", error);
     }
+  },
+}));
+
+interface IDataUser {
+  phone: string;
+  address: string;
+  country: string;
+  city: string;
+  postalCode: string;
+  id: string;
+  email: string;
+  // orders     Order[]
+  // Cart       Cart?
+}
+
+interface IUpdateUser {
+  phone: string;
+  address: string;
+  country: string;
+  city: string;
+  postalCode: string;
+  email: string;
+  id: string;
+}
+
+interface IUser {
+  users: IDataUser;
+  fetchUsers: () => Promise<void>;
+  updateUsers: (item: IUpdateUser) => void;
+  isLoadding: boolean;
+}
+
+export const useUserStore = create<IUser>((set, get) => ({
+  users: {
+    phone: "",
+    address: "",
+    country: "",
+    city: "",
+    postalCode: "",
+    id: "",
+    email: "",
+  },
+  isLoadding: true,
+
+  fetchUsers: async () => {
+    set({ isLoadding: true });
+
+    const response = await fetch("/api/user");
+
+    if (!response.ok)
+      return set({
+        users: {
+          phone: "",
+          address: "",
+          country: "",
+          city: "",
+          postalCode: "",
+          id: "",
+          email: "",
+        },
+        isLoadding: false,
+      });
+
+    const data: IDataUser[] = await response.json();
+
+    if (!data)
+      return set({
+        users: {
+          phone: "",
+          address: "",
+          country: "",
+          city: "",
+          postalCode: "",
+          id: "",
+          email: "",
+        },
+        isLoadding: false,
+      });
+
+    // console.log("categories from state: **  ", categories);
+
+    return set({
+      users: data[0],
+      isLoadding: false,
+    });
+  },
+
+  updateUsers: async ({
+    phone,
+    address,
+    country,
+    city,
+    postalCode,
+    email,
+    id,
+  }) => {
+    try {
+      set({ isLoadding: true });
+      const response = await fetch("/api/user", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          phone,
+          address,
+          country,
+          city,
+          postalCode,
+          email,
+          id,
+        }),
+      });
+
+      if (response.ok) {
+        toast.success("User updated successfully");
+        await get().fetchUsers();
+        set({ isLoadding: false });
+      } else {
+        toast.error("Error updating User");
+        set({ isLoadding: false });
+      }
+    } catch (error) {
+      toast.error("Server Error updating User");
+      console.error("Server Error updating User:", error);
+      set({ isLoadding: false });
+    }
+    set({ isLoadding: false });
   },
 }));
 
