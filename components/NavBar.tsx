@@ -30,6 +30,7 @@ const Navbar = () => {
     increaseQuantity: incrementQuantity,
     decreaseQuantity: decrementQuantity,
     removeCartItem: removeItem,
+    isLoading,
     setUserId,
     syncLocalToServer,
   } = useCartStore();
@@ -44,7 +45,7 @@ const Navbar = () => {
     }
   }, [userId]);
 
-  console.log("cart items: ", cartItems);
+  // console.log("cart items: ", cartItems);
 
   return (
     <nav
@@ -113,26 +114,33 @@ const Navbar = () => {
                 </PopoverTrigger>
                 <PopoverContent className="w-80 p-4">
                   <h3 className="text-lg font-semibold mb-2">Cart Items</h3>
+                  {isLoading && <ImgLoader />}
                   {cartItems.length > 0 ? (
                     <ul className="space-y-4 max-h-[60vh] overflow-y-scroll p-2">
                       {cartItems.map((item) => (
                         <li
-                          key={item.product.id}
+                          key={item.id || item?.product?.id}
                           className="flex items-center space-x-4 border-b-2 border-slate-300 py-1"
                         >
                           <Image
-                            src={`/api/telegram-file?fileId=${item.product.image[0]}`}
-                            alt={item.product.name || "product image"}
+                            src={`/api/telegram-file?fileId=${
+                              item.image || item.product.image[0]
+                            }`}
+                            alt={
+                              item.name ||
+                              item?.product?.name ||
+                              "product image"
+                            }
                             height={100}
                             width={100}
                             className="w-16 h-16 object-cover rounded-lg"
                           />
                           <div className="flex-1">
                             <h4 className="text-sm font-semibold">
-                              {item.product.name}
+                              {item.name || item?.product?.name}
                             </h4>
                             <div className="flex items-center justify-between mt-2">
-                              <span>${item.product.price}</span>
+                              <span>${item.price || item?.product?.price}</span>
                               <div className="flex items-center space-x-2">
                                 <Button
                                   variant="outline"

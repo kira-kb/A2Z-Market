@@ -9,6 +9,8 @@ export async function POST(req: Request) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
+    console.log("from cart post user id: ", userId);
+
     if (!userId) {
       return NextResponse.json({ error: "User ID required" }, { status: 400 });
     }

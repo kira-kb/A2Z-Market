@@ -294,6 +294,7 @@ interface ICart {
   cartItems: CartItem[];
   userId: string | null;
   cartId: string | null;
+  isLoading: boolean;
   setUserId: (id: string | null) => void;
   addCartItem: (item: CartItem) => void;
   removeCartItem: (id: string) => void;
@@ -311,6 +312,7 @@ export const useCartStore = create<ICart>((set, get) => ({
       : [],
   userId: null,
   cartId: null,
+  isLoading: true,
 
   setUserId: (id) => {
     set({ userId: id });
@@ -334,27 +336,35 @@ export const useCartStore = create<ICart>((set, get) => ({
       toast.success(`${item.name} has been added to the cart.`);
     }
 
-    set({ cartItems: updatedItems });
+    // set({ cartItems: updatedItems });
     if (!userId) {
       localStorage.setItem("a2z-cart", JSON.stringify(updatedItems));
     } else {
       // Sync to DB
 
-      console.log("item: ", item);
-      fetch("/api/cart", {
-        method: "PUT",
-        body: JSON.stringify({
-          cartId,
-          productId: item.id,
-          quantity: item.quantity,
-        }),
-      });
+      try {
+        // console.log("item: ", item);
+        fetch("/api/cart", {
+          method: "PUT",
+          body: JSON.stringify({
+            cartId,
+            productId: item.id,
+            quantity: item.quantity,
+          }),
+        });
+
+        console.log("fetching data from server");
+        get().fetchServerCart();
+      } catch (error) {
+        console.log(error);
+      }
     }
   },
 
   removeCartItem: (id) => {
     const { cartItems, userId } = get();
     const updatedItems = cartItems.filter((item) => item.id !== id);
+    const normalData = cartItems;
     set({ cartItems: updatedItems });
 
     if (!userId) {
@@ -363,10 +373,16 @@ export const useCartStore = create<ICart>((set, get) => ({
       const itemToDelete = cartItems.find((i) => i.id === id);
       // console.log("item to delete id: ", itemToDelete);
       if (itemToDelete) {
-        fetch("/api/cart", {
-          method: "DELETE",
-          body: JSON.stringify({ itemId: itemToDelete.id }),
-        });
+        try {
+          fetch("/api/cart", {
+            method: "DELETE",
+            body: JSON.stringify({ itemId: itemToDelete.id }),
+          });
+        } catch (error) {
+          console.log(error);
+          set({ cartItems: normalData });
+          toast.error("Something went wrong! refresh the page!");
+        }
       }
     }
   },
@@ -377,6 +393,7 @@ export const useCartStore = create<ICart>((set, get) => ({
       item.id === id ? { ...item, quantity: item.quantity + 1 } : item
     );
     set({ cartItems: updatedItems });
+    get().syncLocalToServer();
   },
 
   decreaseQuantity: (id) => {
@@ -387,21 +404,25 @@ export const useCartStore = create<ICart>((set, get) => ({
         : item
     );
     set({ cartItems: updatedItems });
+    get().syncLocalToServer();
   },
 
   totalPrice: () => {
     return get().cartItems.reduce(
       (total, item) => total + item.product.price * item.quantity,
+      // (total, item) => total + item.price * item.quantity,
       0
     );
   },
 
   fetchServerCart: async () => {
+    set({ isLoading: true });
     const { userId } = get();
     if (!userId) return;
     const res = await fetch(`/api/cart?userId=${userId}`);
     const data = await res.json();
     set({ cartItems: data.items || [], cartId: data.id });
+    set({ isLoading: false });
   },
 
   syncLocalToServer: async () => {
@@ -1199,7 +1220,9 @@ export const useUserStore = create<IUser>((set, get) => ({
 
     const data: IDataUser[] = await response.json();
 
-    if (!data)
+    // console.log("incomming user data: ", data);
+    if (!data) {
+      // console.log("we are definitly not setting user");
       return set({
         users: {
           phone: "",
@@ -1212,9 +1235,10 @@ export const useUserStore = create<IUser>((set, get) => ({
         },
         isLoadding: false,
       });
+    }
 
     // console.log("categories from state: **  ", categories);
-
+    console.log("setting user");
     return set({
       users: data[0],
       isLoadding: false,
