@@ -1289,6 +1289,132 @@ export const useUserStore = create<IUser>((set, get) => ({
   },
 }));
 
+// stores/orderStore.ts
+// import { create } from 'zustand';
+// import { toast } from 'sonner';
+
+export interface OrderItem {
+  id: string;
+  productId: string;
+  orderId: string;
+  quantity: number;
+  price: number;
+  product: {
+    name: string;
+    image: string;
+  };
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  status: string;
+  createdAt: string;
+}
+
+interface OrderState {
+  orders: Order[];
+  loading: boolean;
+  isCanceling: boolean;
+  isAdding: boolean;
+  fetchOrders: (userId: string) => Promise<void>;
+  addOrder: (userId: string) => Promise<void>;
+  cancelOrder: (orderId: string) => Promise<void>;
+  removeItem: (itemId: string) => Promise<void>;
+  deletePendingOrder: (orderId: string) => Promise<void>;
+}
+
+export const useOrderStore = create<OrderState>((set, get) => ({
+  orders: [],
+  loading: false,
+  isCanceling: false,
+  isAdding: false,
+
+  fetchOrders: async (userId) => {
+    try {
+      set({ loading: true });
+      const res = await fetch(`/api/orders?userId=${userId}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      set({ orders: data });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch orders");
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  addOrder: async (userId) => {
+    try {
+      set({ isAdding: true });
+      const res = await fetch(`/api/orders?userId=${userId}`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to Placing Order");
+      toast.success("Order Placed");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to Placing Order");
+    } finally {
+      set({ isAdding: false });
+    }
+  },
+
+  cancelOrder: async (orderId) => {
+    try {
+      set({ isCanceling: true });
+      const res = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status: "cancelled" }),
+      });
+      if (!res.ok) throw new Error("Failed to cancel");
+      toast.success("Order cancelled");
+      await get().fetchOrders(get().orders[0]?.userId);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to cancel order");
+    } finally {
+      set({ isCanceling: false });
+    }
+  },
+
+  removeItem: async (itemId) => {
+    try {
+      const res = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId }),
+      });
+      if (!res.ok) throw new Error("Failed to remove");
+      toast.success("Item removed");
+      await get().fetchOrders(get().orders[0]?.userId);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to remove item");
+    }
+  },
+
+  deletePendingOrder: async (orderId) => {
+    try {
+      const res = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      toast.success("Order deleted");
+      await get().fetchOrders(get().orders[0]?.userId);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to delete order");
+    }
+  },
+}));
+
 // ??????????????????????????????????????????
 // ??????????????????????????????????????????
 // ??????????????????????????????????????????

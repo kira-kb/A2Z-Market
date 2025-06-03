@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useCartStore, useUserStore } from "@/store";
+import { useCartStore, useOrderStore, useUserStore } from "@/store";
 import Link from "next/link";
 import { Label } from "@/components/ui/label";
 import { Building2, Earth, Mail, MapPin, MapPinned, Phone } from "lucide-react";
@@ -28,7 +28,13 @@ import ImgLoader from "@/components/imgLoader";
 
 const CheckoutPage = () => {
   const { users, fetchUsers, isLoadding, updateUsers } = useUserStore();
-  const { cartItems, totalPrice, isLoading: isCartLoading } = useCartStore();
+  const {
+    cartItems,
+    totalPrice,
+    isLoading: isCartLoading,
+    fetchServerCart,
+  } = useCartStore();
+  const { addOrder, isAdding } = useOrderStore();
 
   const [shippingInfo, setShippingInfo] = useState({
     email: "",
@@ -78,7 +84,7 @@ const CheckoutPage = () => {
     }
   };
 
-  const handleSubmitOrder = () => {
+  const handleSubmitOrder = async () => {
     if (!paymentMethod) {
       alert("Please select a payment method.");
       return;
@@ -89,7 +95,9 @@ const CheckoutPage = () => {
       return;
     }
 
-    console.log("Order Submitted", { shippingInfo, paymentMethod });
+    await addOrder(users.id);
+    await fetchServerCart();
+    // console.log("Order Submitted", { shippingInfo, paymentMethod });
   };
 
   return (
@@ -205,9 +213,14 @@ const CheckoutPage = () => {
                     ${totalPrice().toFixed(2)}
                   </span>
                 </div>
-                <Button className="mt-6 w-full" onClick={handleSubmitOrder}>
+                <LoadingButton
+                  loading={isAdding}
+                  LoadingText="Placing Order..."
+                  className="mt-6 w-full"
+                  onClick={handleSubmitOrder}
+                >
                   Place Order
-                </Button>
+                </LoadingButton>
               </>
             )}
           </CardContent>

@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { Loader2, PackageCheck, PackageX, Truck } from "lucide-react";
 import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
+import { useOrderStore } from "@/store";
+import { LoadingButton } from "@/components/loaddingButton";
 
 interface Product {
   id: string;
@@ -79,32 +81,21 @@ const OrderStatusBadge = ({ status }: OrderStatusBadgeProps) => {
 };
 
 export default function CustomerOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  // const [orders, setOrders] = useState<Order[]>([]);
+  // const [loading, setLoading] = useState(true);
   // const userId = "user_xxxx"; // Replace with actual Clerk or auth userId
 
   const user = useUser();
   const userId = user.user?.id;
 
-  useEffect(() => {
-    async function fetchOrders() {
-      try {
-        // const res = await fetch(`api/orders?userId=${userId}`);
-        const res = await fetch(
-          `api/orders?userId=user_2w4wJDt6S3bWrvQDfbc3urVLuDr`
-        );
-        const data = await res.json();
+  // console.log("from acount user id: ", userId);
 
-        console.log("from account order data: ", data);
-        setOrders(data);
-      } catch (err) {
-        console.error("Error fetching orders", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchOrders();
-  }, []);
+  const { fetchOrders, orders, loading, cancelOrder, isCanceling } =
+    useOrderStore();
+
+  useEffect(() => {
+    if (userId) fetchOrders(userId);
+  }, [userId, fetchOrders]);
 
   if (loading)
     return (
@@ -186,7 +177,14 @@ export default function CustomerOrdersPage() {
               </div>
               {order.status === "pending" && (
                 <div className="mt-4 flex gap-2">
-                  <Button variant="destructive">Cancel Order</Button>
+                  <LoadingButton
+                    variant="destructive"
+                    loading={isCanceling}
+                    LoadingText="Canceling..."
+                    onClick={() => cancelOrder(order.id)}
+                  >
+                    Cancel Order
+                  </LoadingButton>
                   {/* Add remove product from order here if needed */}
                 </div>
               )}

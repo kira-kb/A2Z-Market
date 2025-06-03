@@ -46,11 +46,11 @@ export async function POST(req: Request) {
         status: "pending",
         items: {
           create: cart.items.map((item) => ({
-            productId: item.productId,
+            // productId: item.product.id,
             quantity: item.quantity,
             price: item.product.price, // price at purchase
             product: {
-              connect: { id: item.productId },
+              connect: { id: item.product.id },
             },
           })),
         },
