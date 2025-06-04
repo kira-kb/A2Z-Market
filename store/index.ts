@@ -1167,9 +1167,11 @@ interface IDataUser {
   address: string;
   country: string;
   city: string;
+  createdAt: string;
   postalCode: string;
   id: string;
   email: string;
+  isAdmin: boolean;
   // orders     Order[]
   // Cart       Cart?
 }
@@ -1186,6 +1188,7 @@ interface IUpdateUser {
 
 interface IUser {
   users: IDataUser;
+  allUsers: IDataUser[];
   fetchUsers: () => Promise<void>;
   updateUsers: (item: IUpdateUser) => void;
   isLoadding: boolean;
@@ -1200,7 +1203,10 @@ export const useUserStore = create<IUser>((set, get) => ({
     postalCode: "",
     id: "",
     email: "",
+    createdAt: "",
+    isAdmin: false,
   },
+  allUsers: [],
   isLoadding: true,
 
   fetchUsers: async () => {
@@ -1218,6 +1224,8 @@ export const useUserStore = create<IUser>((set, get) => ({
           postalCode: "",
           id: "",
           email: "",
+          createdAt: "",
+          isAdmin: false,
         },
         isLoadding: false,
       });
@@ -1236,7 +1244,10 @@ export const useUserStore = create<IUser>((set, get) => ({
           postalCode: "",
           id: "",
           email: "",
+          createdAt: "",
+          isAdmin: false,
         },
+        allUsers: [],
         isLoadding: false,
       });
     }
@@ -1245,6 +1256,7 @@ export const useUserStore = create<IUser>((set, get) => ({
     console.log("setting user");
     return set({
       users: data[0],
+      allUsers: data,
       isLoadding: false,
     });
   },

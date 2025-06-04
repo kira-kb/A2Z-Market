@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // adjust this import to match your prisma client path
 // import { currentUser } from "@clerk/nextjs/server";
+import adminList from "@/lib/adminList.json";
 
 export async function POST(req: Request) {
   try {
@@ -62,7 +63,14 @@ export async function GET() {
     // console.log("getting users");
     const users = await prisma.user.findMany();
     // console.log("users: ", users);
-    return NextResponse.json(users);
+    const allUsers = users.map((user) => {
+      if (adminList.some((admin) => admin.email == user.email)) {
+        return { ...user, isAdmin: true };
+      } else {
+        return { ...user, isAdmin: false };
+      }
+    });
+    return NextResponse.json(allUsers);
   } catch (error) {
     console.error("Getting users error:", error);
     return NextResponse.json(
