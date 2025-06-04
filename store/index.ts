@@ -331,6 +331,7 @@ export const useCartStore = create<ICart>((set, get) => ({
           : cartItem
       );
       toast.warning(`${item.name} is already in the cart. Quantity updated.`);
+      return;
     } else {
       updatedItems = [item, ...cartItems];
       toast.success(`${item.name} has been added to the cart.`);
@@ -409,7 +410,10 @@ export const useCartStore = create<ICart>((set, get) => ({
 
   totalPrice: () => {
     return get().cartItems.reduce(
-      (total, item) => total + item.product.price * item.quantity,
+      (total, item) =>
+        item?.product?.price
+          ? total + item?.product?.price * item.quantity
+          : total + item.price * item.quantity,
       // (total, item) => total + item.price * item.quantity,
       0
     );
@@ -1305,23 +1309,41 @@ export interface OrderItem {
   };
 }
 
+interface User {
+  id: string;
+  email: string;
+  phone: string;
+  address: string;
+  country: string;
+  city: string;
+  postalCode: string;
+}
+
 export interface Order {
   id: string;
   userId: string;
   items: OrderItem[];
   totalAmount: number;
   status: string;
+  user: User;
   createdAt: string;
 }
 
 interface OrderState {
   orders: Order[];
   loading: boolean;
-  isCanceling: boolean;
+  isUpdating: boolean;
   isAdding: boolean;
-  fetchOrders: (userId: string) => Promise<void>;
+  fetchOrders: (userId: string, admin?: boolean) => Promise<void>;
   addOrder: (userId: string) => Promise<void>;
-  cancelOrder: (orderId: string) => Promise<void>;
+  // cancelOrder: (orderId: string) => Promise<void>;
+  updateOrder: (
+    orderId: string,
+    userId: string,
+    // status: "cancelled" | "delivered" | "pending" | "shipped"
+    status: string,
+    admin?: boolean
+  ) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
   deletePendingOrder: (orderId: string) => Promise<void>;
 }
@@ -1329,13 +1351,15 @@ interface OrderState {
 export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   loading: false,
-  isCanceling: false,
+  isUpdating: false,
   isAdding: false,
 
-  fetchOrders: async (userId) => {
+  fetchOrders: async (userId, admin = false) => {
     try {
       set({ loading: true });
-      const res = await fetch(`/api/orders?userId=${userId}`);
+      const res = await fetch(
+        `/api/orders?userId=${userId}${admin ? "&admin=true" : ""}`
+      );
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       set({ orders: data });
@@ -1363,22 +1387,51 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     }
   },
 
-  cancelOrder: async (orderId) => {
+  // cancelOrder: async (orderId) => {
+  //   try {
+  //     set({ isUpdating: true });
+  //     const res = await fetch("/api/orders", {
+  //       method: "PATCH",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ orderId, status: "cancelled" }),
+  //     });
+  //     if (!res.ok) throw new Error("Failed to cancel");
+  //     toast.success("Order cancelled");
+  //     await get().fetchOrders(get().orders[0]?.userId);
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to cancel order");
+  //   } finally {
+  //     set({ isUpdating: false });
+  //   }
+  // },
+
+  updateOrder: async (orderId, userId, status, admin = false) => {
+    if (
+      !["cancelled", "delivered", "pending", "shipped"].some(
+        (stat) => stat == status
+      )
+    ) {
+      toast.error("Invalid status");
+      console.log("status: ", status);
+      return;
+    }
+
     try {
-      set({ isCanceling: true });
+      set({ isUpdating: true });
       const res = await fetch("/api/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, status: "cancelled" }),
+        body: JSON.stringify({ orderId, status, userId }),
       });
       if (!res.ok) throw new Error("Failed to cancel");
+      await get().fetchOrders(userId, admin);
       toast.success("Order cancelled");
-      await get().fetchOrders(get().orders[0]?.userId);
     } catch (err) {
       console.error(err);
       toast.error("Failed to cancel order");
     } finally {
-      set({ isCanceling: false });
+      set({ isUpdating: false });
     }
   },
 

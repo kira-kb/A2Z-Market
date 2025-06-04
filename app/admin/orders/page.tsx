@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Eye, PackageCheck, PackageX, Truck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -36,89 +36,154 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast, Toaster } from "sonner";
+// import {  Toaster } from "sonner";
 import { Label } from "@/components/ui/label";
+import { useOrderStore } from "@/store";
+import { useUser } from "@clerk/nextjs";
+import ImgLoader from "@/components/imgLoader";
 
-interface Order {
-  id: number;
-  customer: string;
-  date: string;
-  total: number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
-  itemsCount: number;
+import { format } from "date-fns";
+import Image from "next/image";
+import { LoadingButton } from "@/components/loaddingButton";
+
+// interface Order {
+//   id: number;
+//   customer: string;
+//   date: string;
+//   total: number;
+//   status: "pending" | "shipped" | "delivered" | "cancelled";
+//   // itemsCount: number;
+// }
+export interface OrderItem {
+  id: string;
+  productId: string;
+  orderId: string;
+  quantity: number;
+  price: number;
+  product: {
+    name: string;
+    image: string;
+  };
 }
 
-const initialOrders: Order[] = [
-  {
-    id: 1,
-    customer: "John Doe",
-    date: "2023-10-27",
-    total: 150.0,
-    status: "processing",
-    itemsCount: 3,
-  },
-  {
-    id: 2,
-    customer: "Jane Smith",
-    date: "2023-10-26",
-    total: 200.0,
-    status: "shipped",
-    itemsCount: 2,
-  },
-  {
-    id: 3,
-    customer: "Peter Jones",
-    date: "2023-10-25",
-    total: 75.0,
-    status: "pending",
-    itemsCount: 1,
-  },
-  {
-    id: 4,
-    customer: "Alice Brown",
-    date: "2023-10-24",
-    total: 300.0,
-    status: "delivered",
-    itemsCount: 5,
-  },
-  {
-    id: 5,
-    customer: "Bob Wilson",
-    date: "2023-10-23",
-    total: 100.0,
-    status: "cancelled",
-    itemsCount: 2,
-  },
-];
+interface User {
+  id: string;
+  email: string;
+  phone: string;
+  address: string;
+  country: string;
+  city: string;
+  postalCode: string;
+}
+interface Order {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  status: string;
+  user: User;
+
+  createdAt: string;
+}
+
+// const initialOrders: Order[] = [
+//   {
+//     id: 1,
+//     customer: "John Doe",
+//     date: "2023-10-27",
+//     total: 150.0,
+//     status: "processing",
+//     itemsCount: 3,
+//   },
+//   {
+//     id: 2,
+//     customer: "Jane Smith",
+//     date: "2023-10-26",
+//     total: 200.0,
+//     status: "shipped",
+//     itemsCount: 2,
+//   },
+//   {
+//     id: 3,
+//     customer: "Peter Jones",
+//     date: "2023-10-25",
+//     total: 75.0,
+//     status: "pending",
+//     itemsCount: 1,
+//   },
+//   {
+//     id: 4,
+//     customer: "Alice Brown",
+//     date: "2023-10-24",
+//     total: 300.0,
+//     status: "delivered",
+//     itemsCount: 5,
+//   },
+//   {
+//     id: 5,
+//     customer: "Bob Wilson",
+//     date: "2023-10-23",
+//     total: 100.0,
+//     status: "cancelled",
+//     itemsCount: 2,
+//   },
+// ];
 
 function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
+  // const { orders: ordersOnServer, fetchOrders } = useOrderStore();
+  const { orders, fetchOrders, loading, updateOrder, isUpdating } =
+    useOrderStore();
+
+  console.log("orders: ", orders);
+
+  const user = useUser();
+  const userId = user.user?.id;
+
+  useEffect(() => {
+    if (userId) {
+      fetchOrders(userId, true);
+    }
+  }, [userId]);
+
+  // useEffect(() => {
+  //   fetchOrders("user_2w4wJDt6S3bWrvQDfbc3urVLuDr");
+  // }, [fetchOrders]);
+
+  // const [orders, setOrders] = useState<Order[]>(ordersOnServer);
   const [open, setOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredOrders = orders.filter((order) =>
-    order.customer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOrders = orders.filter((order) => {
+    if (!order) return [];
+    return (
+      order?.user?.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      order?.id.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
     setOpen(true);
   };
 
-  const handleUpdateStatus = (orderId: number, newStatus: Order["status"]) => {
-    setOrders(
-      orders.map((order) =>
-        order.id === orderId ? { ...order, status: newStatus } : order
-      )
-    );
-    toast.success(`Order ${orderId} status updated to ${newStatus}`);
+  const handleUpdateStatus = async (
+    orderId: string,
+    newStatus: Order["status"]
+  ) => {
+    // setOrders(
+    //   orders.map((order) =>
+    //     order.id === orderId ? { ...order, status: newStatus } : order
+    //   )
+    // );
+    await updateOrder(orderId, userId!, newStatus, true);
+    // toast.success(`Order ${orderId} status updated to ${newStatus}`);
     setOpen(false);
   };
 
   return (
     <SidebarProvider>
-      <Toaster richColors position="top-center" />
+      {/* <Toaster richColors position="top-center" /> */}
       <div className="">
         <AdminSidebar className="z-0 my-16" />
         <SidebarTrigger className="fixed left-0 top-0 mt-16" />
@@ -161,13 +226,28 @@ function AdminOrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {loading && (
+                    <TableRow>
+                      <TableCell>
+                        <ImgLoader />
+                      </TableCell>
+                    </TableRow>
+                  )}
                   {filteredOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.customer}</TableCell>
-                      <TableCell>{order.date}</TableCell>
-                      <TableCell>{order.itemsCount}</TableCell>
-                      <TableCell>${order.total.toFixed(2)}</TableCell>
+                      <TableCell>{order?.user?.email.split("@")[0]}</TableCell>
+                      {/* <TableCell>{order.createdAt}</TableCell> */}
+                      <TableCell>
+                        {format(new Date(order.createdAt), "PPPpp")}
+                      </TableCell>
+                      <TableCell>{order.items.length}</TableCell>
+                      <TableCell>
+                        ${order.totalAmount}
+                        {/* {order.items
+                          .reduce((acc, item) => acc + item.price, 0)
+                          .toFixed(2)} */}
+                      </TableCell>
                       <TableCell>
                         <OrderStatusBadge status={order.status} />
                       </TableCell>
@@ -190,7 +270,7 @@ function AdminOrdersPage() {
       </div>
       {/* View Order Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="overflow-y-scroll max-h-[95dvh]">
           <DialogHeader>
             <DialogTitle>Order Details</DialogTitle>
             <DialogDescription>
@@ -202,6 +282,7 @@ function AdminOrdersPage() {
               order={selectedOrder}
               onUpdateStatus={handleUpdateStatus}
               setOpen={setOpen}
+              isUpdating={isUpdating}
             />
           )}
         </DialogContent>
@@ -223,11 +304,6 @@ const OrderStatusBadge = ({ status }: OrderStatusBadgeProps) => {
     case "pending":
       badgeText = "Pending";
       badgeColor = "bg-yellow-500 text-yellow-900";
-      badgeIcon = <Truck className="h-4 w-4" />;
-      break;
-    case "processing":
-      badgeText = "Processing";
-      badgeColor = "bg-blue-500 text-blue-900";
       badgeIcon = <Truck className="h-4 w-4" />;
       break;
     case "shipped":
@@ -263,91 +339,259 @@ const OrderStatusBadge = ({ status }: OrderStatusBadgeProps) => {
 
 interface ViewOrderFormProps {
   order: Order;
-  onUpdateStatus: (orderId: number, newStatus: Order["status"]) => void;
+  onUpdateStatus: (orderId: string, newStatus: Order["status"]) => void;
   setOpen: (isOpen: boolean) => void;
+  isUpdating: boolean;
 }
 
 const ViewOrderForm = ({
   order,
   onUpdateStatus,
   setOpen,
+  isUpdating,
 }: ViewOrderFormProps) => {
+  const [status, setStatus] = useState<string>(order.status);
   const handleStatusChange = (newStatus: Order["status"]) => {
-    onUpdateStatus(order.id, newStatus);
-    setOpen(false);
+    // onUpdateStatus(order.id, newStatus);
+    setStatus(newStatus);
+    // setOpen(false);
   };
+
+  // const updateOrder
 
   return (
     <div className="grid gap-4 py-4">
+      {/* Order Info */}
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="id" className="text-right">
           Order ID
         </Label>
         <Input id="id" value={order.id} className="col-span-3" readOnly />
       </div>
+
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="customer" className="text-right">
           Customer
         </Label>
         <Input
           id="customer"
-          value={order.customer}
+          value={order.user.email}
           className="col-span-3"
           readOnly
         />
       </div>
+
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="date" className="text-right">
           Date
         </Label>
-        <Input id="date" value={order.date} className="col-span-3" readOnly />
+        <Input
+          id="date"
+          value={new Date(order.createdAt).toLocaleString()}
+          className="col-span-3"
+          readOnly
+        />
       </div>
+
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="itemsCount" className="text-right">
           Items Count
         </Label>
         <Input
           id="itemsCount"
-          value={order.itemsCount}
+          value={order.items.length}
           className="col-span-3"
           readOnly
         />
       </div>
+
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="total" className="text-right">
           Total
         </Label>
         <Input
           id="total"
-          value={`$${order.total.toFixed(2)}`}
+          value={`$${order.totalAmount.toFixed(2)}`}
           className="col-span-3"
           readOnly
         />
       </div>
+
+      {/* Shipping Address */}
+      <div className="grid grid-cols-4 items-start gap-4">
+        <Label htmlFor="address" className="text-right pt-2">
+          Shipping Address
+        </Label>
+        <div className="col-span-3">
+          <p className="text-sm border rounded-md p-2">
+            {order.user?.email}
+            <br />
+            {/* {order.user?.street}<br /> */}
+            {order.user?.city}, {order.user?.country} {order.user?.postalCode}
+            <br />
+            {order.user?.country}
+          </p>
+        </div>
+      </div>
+
+      {/* Ordered Items List */}
+      <div className="grid grid-cols-4 items-start gap-4">
+        <Label className="text-right pt-2">Items</Label>
+        <div className="col-span-3 space-y-2">
+          {order.items.map((item, index) => (
+            <div
+              key={index}
+              className="flex justify-between items-center border p-2 rounded-md text-sm"
+            >
+              <Image
+                src={`/api/telegram-file?fileId=${item.product.image[0]}`}
+                alt="Secure Telegram Image"
+                width={400}
+                height={400}
+                className="w-16 h-16 rounded object-cover"
+              />
+              <span className="font-medium">{item.product.name}</span>
+              <span>
+                {item.quantity} × ${item.price.toFixed(2)}
+              </span>
+              <span className="text-muted-foreground">
+                ${(item.quantity * item.price).toFixed(2)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Status */}
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="status" className="text-right">
           Status
         </Label>
-        <Select onValueChange={handleStatusChange} defaultValue={order.status}>
+        {/* <Select onValueChange={handleStatusChange} defaultValue={order.status}> */}
+        <Select onValueChange={handleStatusChange} defaultValue={status}>
           <SelectTrigger className="col-span-3">
             <SelectValue placeholder="Select a status" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
             <SelectItem value="shipped">Shipped</SelectItem>
             <SelectItem value="delivered">Delivered</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
       <DialogFooter>
-        <Button type="button" onClick={() => setOpen(false)}>
+        <LoadingButton
+          LoadingText="Updating..."
+          type="button"
+          variant="default"
+          loading={isUpdating}
+          onClick={() => onUpdateStatus(order.id, status)}
+        >
+          Update
+        </LoadingButton>
+        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
           Close
         </Button>
       </DialogFooter>
     </div>
   );
 };
+
+// ???????????????????????????????????????????????
+// ???????????????????????????????????????????????
+// ???????????????????????????????????????????????
+
+// const ViewOrderForm = ({
+//   order,
+//   onUpdateStatus,
+//   setOpen,
+// }: ViewOrderFormProps) => {
+//   const handleStatusChange = (newStatus: Order["status"]) => {
+//     onUpdateStatus(order.id, newStatus);
+//     setOpen(false);
+//   };
+
+//   return (
+//     <div className="grid gap-4 py-4">
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="id" className="text-right">
+//           Order ID
+//         </Label>
+//         <Input id="id" value={order.id} className="col-span-3" readOnly />
+//       </div>
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="customer" className="text-right">
+//           Customer
+//         </Label>
+//         <Input
+//           id="customer"
+//           value={order.user.email}
+//           className="col-span-3"
+//           readOnly
+//         />
+//       </div>
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="date" className="text-right">
+//           Date
+//         </Label>
+//         <Input
+//           id="date"
+//           value={order.createdAt}
+//           className="col-span-3"
+//           readOnly
+//         />
+//       </div>
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="itemsCount" className="text-right">
+//           Items Count
+//         </Label>
+//         <Input
+//           id="itemsCount"
+//           value={order.items.length}
+//           className="col-span-3"
+//           readOnly
+//         />
+//       </div>
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="total" className="text-right">
+//           Total
+//         </Label>
+//         <Input
+//           id="total"
+//           // value={`$${order.items
+//           //   .reduce((acc, item) => acc + item.price, 0)
+//           //   .toFixed(2)}`}
+//           value={`$${order.totalAmount}`}
+//           className="col-span-3"
+//           readOnly
+//         />
+//       </div>
+//       <div className="grid grid-cols-4 items-center gap-4">
+//         <Label htmlFor="status" className="text-right">
+//           Status
+//         </Label>
+//         <Select onValueChange={handleStatusChange} defaultValue={order.status}>
+//           <SelectTrigger className="col-span-3">
+//             <SelectValue placeholder="Select a status" />
+//           </SelectTrigger>
+//           <SelectContent>
+//             <SelectItem value="pending">Pending</SelectItem>
+//             {/* <SelectItem value="processing">Processing</SelectItem> */}
+//             <SelectItem value="shipped">Shipped</SelectItem>
+//             <SelectItem value="delivered">Delivered</SelectItem>
+//             <SelectItem value="cancelled">Cancelled</SelectItem>
+//           </SelectContent>
+//         </Select>
+//       </div>
+//       <DialogFooter>
+//         <Button type="button" onClick={() => setOpen(false)}>
+//           Close
+//         </Button>
+//       </DialogFooter>
+//     </div>
+//   );
+// };
 
 export default AdminOrdersPage;

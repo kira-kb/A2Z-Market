@@ -90,7 +90,7 @@ export default function CustomerOrdersPage() {
 
   // console.log("from acount user id: ", userId);
 
-  const { fetchOrders, orders, loading, cancelOrder, isCanceling } =
+  const { fetchOrders, orders, loading, updateOrder, isUpdating } =
     useOrderStore();
 
   useEffect(() => {
@@ -179,9 +179,10 @@ export default function CustomerOrdersPage() {
                 <div className="mt-4 flex gap-2">
                   <LoadingButton
                     variant="destructive"
-                    loading={isCanceling}
+                    loading={isUpdating}
                     LoadingText="Canceling..."
-                    onClick={() => cancelOrder(order.id)}
+                    // onClick={() => cancelOrder(order.id)}
+                    onClick={() => updateOrder(order.id, userId!, "cancelled")}
                   >
                     Cancel Order
                   </LoadingButton>
