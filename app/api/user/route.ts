@@ -1,6 +1,8 @@
 // app/api/register-user/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // adjust this import to match your prisma client path
+import fs from "fs/promises";
+import path from "path";
 // import { currentUser } from "@clerk/nextjs/server";
 import adminList from "@/lib/adminList.json";
 
@@ -73,6 +75,126 @@ export async function GET() {
     return NextResponse.json(allUsers);
   } catch (error) {
     console.error("Getting users error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+// export async function PUT(req: Request) {
+//   try {
+//     const { adminId, userId, userEmail } = await req.json();
+
+//     if (!adminId || !userId || !userEmail)
+//       return NextResponse.json(
+//         { msg: "cant identify the user" },
+//         { status: 400 }
+//       );
+
+//     const admin = await prisma.user.findUnique({
+//       where: { id: adminId },
+//     });
+
+//     if (!admin)
+//       return NextResponse.json({ msg: "admin not found" }, { status: 404 });
+
+//     if (!adminList.some((a) => a.email == admin.email))
+//       return NextResponse.json(
+//         { msg: "You are not authorized to perform this action" },
+//         { status: 403 }
+//       );
+
+//     const user = await prisma.user.findUnique({
+//       where: { id: userId, email: userEmail },
+//     });
+
+//     if (!user)
+//       return NextResponse.json({ msg: "user not found" }, { status: 404 });
+
+//     const normalAdmin = "kirubelbewket@gmail.com";
+
+//     if (!adminList.some((admin) => admin.email == normalAdmin))
+//       adminList.push({ email: normalAdmin });
+
+//     const newList = adminList.some((admin) => admin.email == user.email)
+//       ? adminList.filter((admin) => admin.email != user.email)
+//       : adminList.push({ email: user.email });
+
+//     await fs.writeFile("@/lib/adminList.json", JSON.stringify(newList));
+//   } catch (error) {
+//     console.error("cann't change users previlage error:", error);
+//     return NextResponse.json(
+//       { error: "Internal server error" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
+export async function PUT(req: Request) {
+  try {
+    const { adminId, userId, userEmail } = await req.json();
+
+    // Validate inputs
+    if (!adminId || !userId || !userEmail) {
+      return NextResponse.json(
+        { msg: "Missing required identifiers" },
+        { status: 400 }
+      );
+    }
+
+    // Check if admin exists and is authorized
+    const admin = await prisma.user.findUnique({ where: { id: adminId } });
+
+    if (!admin) {
+      return NextResponse.json({ msg: "Admin not found" }, { status: 404 });
+    }
+
+    const isAuthorized = adminList.some((a) => a.email === admin.email);
+
+    if (!isAuthorized) {
+      return NextResponse.json(
+        { msg: "You are not authorized to perform this action" },
+        { status: 403 }
+      );
+    }
+
+    // Check if target user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user || user.email !== userEmail) {
+      return NextResponse.json(
+        { msg: "User not found or email mismatch" },
+        { status: 404 }
+      );
+    }
+
+    // Ensure master admin exists in list
+    const normalAdmin = "kirubelbewket@gmail.com";
+    const adminSet = new Set(adminList.map((admin) => admin.email));
+    adminSet.add(normalAdmin);
+
+    // Toggle admin privilege
+    if (adminSet.has(user.email)) {
+      adminSet.delete(user.email);
+    } else {
+      adminSet.add(user.email);
+    }
+
+    const newList = Array.from(adminSet).map((email) => ({ email }));
+
+    // Write updated admin list to file
+    const adminListPath = path.join(process.cwd(), "lib/adminList.json");
+    await fs.writeFile(adminListPath, JSON.stringify(newList, null, 2));
+
+    return NextResponse.json({
+      msg: "Admin privileges updated",
+      adminList: newList,
+    });
+  } catch (error) {
+    console.error("Can't change user's privilege error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -1191,7 +1191,13 @@ interface IUser {
   allUsers: IDataUser[];
   fetchUsers: () => Promise<void>;
   updateUsers: (item: IUpdateUser) => void;
+  changePervillage: (
+    adminId: string,
+    userId: string,
+    userEmail: string
+  ) => void;
   isLoadding: boolean;
+  isChangingPrevillage: boolean;
 }
 
 export const useUserStore = create<IUser>((set, get) => ({
@@ -1208,6 +1214,7 @@ export const useUserStore = create<IUser>((set, get) => ({
   },
   allUsers: [],
   isLoadding: true,
+  isChangingPrevillage: false,
 
   fetchUsers: async () => {
     set({ isLoadding: true });
@@ -1253,7 +1260,7 @@ export const useUserStore = create<IUser>((set, get) => ({
     }
 
     // console.log("categories from state: **  ", categories);
-    console.log("setting user");
+    // console.log("setting user");
     return set({
       users: data[0],
       allUsers: data,
@@ -1302,6 +1309,33 @@ export const useUserStore = create<IUser>((set, get) => ({
       set({ isLoadding: false });
     }
     set({ isLoadding: false });
+  },
+
+  changePervillage: async (adminId, userId, userEmail) => {
+    try {
+      set({ isChangingPrevillage: true });
+      const response = await fetch("/api/user", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ adminId, userId, userEmail }),
+      });
+
+      if (response.ok) {
+        toast.success("previllage updated");
+        await get().fetchUsers();
+        set({ isChangingPrevillage: false });
+      } else {
+        toast.error("Error changing User previllage");
+        set({ isChangingPrevillage: false });
+      }
+    } catch (error) {
+      toast.error("Server Error updating User previllage");
+      console.error("Server Error updating User previllage:", error);
+      set({ isChangingPrevillage: false });
+    }
+    set({ isChangingPrevillage: false });
   },
 }));
 

@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { LucideBadgeCheck, UserCog2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -26,80 +26,44 @@ import { Input } from "@/components/ui/input";
 import { useUserStore } from "@/store";
 import ImgLoader from "@/components/imgLoader";
 import { format } from "date-fns";
-
-// interface User {
-//   id: number;
-//   phone: string;
-//   email: string;
-//   isAdmin: boolean;
-//   createdAt: string;
-// }
-
-// const initialUsers: User[] = [
-//   {
-//     id: 1,
-//     phone: "John Doe",
-//     email: "john.doe@example.com",
-//     role: "admin",
-//     createdAt: "2023-01-15",
-//   },
-//   {
-//     id: 2,
-//     phone: "Jane Smith",
-//     email: "jane.smith@example.com",
-//     role: "customer",
-//     createdAt: "2023-03-22",
-//   },
-//   {
-//     id: 3,
-//     phone: "Peter Jones",
-//     email: "peter.jones@example.com",
-//     role: "customer",
-//     createdAt: "2023-05-10",
-//   },
-//   {
-//     id: 4,
-//     phone: "Alice Brown",
-//     email: "alice.brown@example.com",
-//     role: "customer",
-//     createdAt: "2023-07-01",
-//   },
-//   {
-//     id: 5,
-//     phone: "Bob Wilson",
-//     email: "bob.wilson@example.com",
-//     role: "customer",
-//     createdAt: "2023-09-18",
-//   },
-// ];
+import { LoadingButton } from "@/components/loaddingButton";
+import { useUser } from "@clerk/nextjs";
 
 function AdminUsersPage() {
   // const [users, setUsers] = useState<User[]>([]);
   // const [editUser, setEditUser] = useState<User | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { allUsers: users, fetchUsers, isLoadding } = useUserStore();
+  const {
+    allUsers: users,
+    fetchUsers,
+    isLoadding,
+    isChangingPrevillage,
+    changePervillage,
+  } = useUserStore();
+
+  const user = useUser();
+  const adminId = user.user?.id;
 
   useEffect(() => {
+    if (!adminId) return;
     fetchUsers();
-  }, [fetchUsers]);
+  }, [fetchUsers, adminId]);
 
-  console.log("users from users: ", users);
+  const [change, setChange] = useState("");
+
+  const handlePrevilegeChange = (
+    adminId: string,
+    userId: string,
+    userEmail: string
+  ) => {
+    setChange(userId);
+    changePervillage(adminId, userId, userEmail);
+  };
 
   const filteredUsers = users.filter((user) =>
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  // const handleEditUser = (user: User) => {
-  //   setEditUser(user);
-  //   // setOpen(true);
-  // };
-
-  // const handleDeleteUser = (userId: number) => {
-  //   setUsers(users.filter((user) => user.id !== userId));
-  //   // Use sonner's toast
-  //   toast.success("User deleted successfully.");
-  // };
 
   return (
     <SidebarProvider>
@@ -136,7 +100,7 @@ function AdminUsersPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead className="w-[100px] text-center">ID</TableHead>
                     <TableHead>phone</TableHead>
                     <TableHead>Email</TableHead>
                     {/* <TableHead>Role</TableHead> */}
@@ -155,16 +119,18 @@ function AdminUsersPage() {
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell
-                        className="font-medium flex flex-nowrap items-center justify-center"
+                        className={`font-medium flex flex-nowrap text-sm items-center justify-center ${
+                          !user.isAdmin ? "ml-6" : ""
+                        }`}
                         title={user.id}
                       >
-                        {user.id.slice(0, 12)}...
                         {user.isAdmin && (
                           <LucideBadgeCheck
                             xlinkTitle="Admin"
-                            className="h-4 w-4 text-green-600 ml-2 rounded"
+                            className="h-4 w-4 text-green-600 mr-2 rounded"
                           />
                         )}
+                        {user.id.slice(0, 12)}...
                       </TableCell>
                       <TableCell>{user.phone}</TableCell>
                       <TableCell>{user.email}</TableCell>
@@ -172,13 +138,23 @@ function AdminUsersPage() {
                         {format(new Date(user.createdAt), "PPpp")}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
+                        <LoadingButton
+                          loading={isChangingPrevillage && change === user.id}
+                          onClick={() =>
+                            adminId
+                              ? handlePrevilegeChange(
+                                  adminId,
+                                  user.id,
+                                  user.email
+                                )
+                              : alert("something went wrong refresh the page")
+                          }
+                          LoadingText="👨‍💼..."
                           variant="ghost"
                           size="icon"
-                          // onClick={() => handleDeleteUser(user.id)}
                         >
                           <UserCog2 className="h-4 w-4" />
-                        </Button>
+                        </LoadingButton>
                       </TableCell>
                     </TableRow>
                   ))}

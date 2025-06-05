@@ -134,7 +134,7 @@ function AdminOrdersPage() {
   const { orders, fetchOrders, loading, updateOrder, isUpdating } =
     useOrderStore();
 
-  console.log("orders: ", orders);
+  // console.log("orders: ", orders);
 
   const user = useUser();
   const userId = user.user?.id;
