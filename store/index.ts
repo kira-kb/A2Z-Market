@@ -1339,10 +1339,6 @@ export const useUserStore = create<IUser>((set, get) => ({
   },
 }));
 
-// stores/orderStore.ts
-// import { create } from 'zustand';
-// import { toast } from 'sonner';
-
 export interface OrderItem {
   id: string;
   productId: string;

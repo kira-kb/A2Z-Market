@@ -1,16 +1,46 @@
 import { AppCarousel } from "@/components/carousel";
 import { InfiniteSliderHoverSpeed } from "@/components/InfinityScroll";
 import Link from "next/link";
-
-import clothes from "@/assets/images/clothings.avif";
-import accessories from "@/assets/images/robotics.avif";
-import shoes from "@/assets/images/shoes.avif";
 import Image from "next/image";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import prisma from "@/lib/prisma";
+
+import defaultImage from "@/assets/images/default_categories.png";
+// import { useCategoryStore } from "@/store";
+// import { useEffect } from "react";
+
+interface ICategoryData {
+  id: string;
+  name: string;
+  image?: string | null;
+}
+
+async function fetchCategories(): Promise<ICategoryData[] | undefined> {
+  try {
+    // const response = await fetch("/api/categories");
+
+    // if (!response.ok) throw new Error("Something went wrong");
+
+    // const data: ICategoryData[] = await response.json();
+
+    // if (!data) return;
+
+    // return data.slice(0, 2);
+    const categories = await prisma.category.findMany({
+      orderBy: {
+        updatedAt: "desc",
+      },
+    });
+    return categories.slice(0, 3);
+  } catch (error) {
+    console.log("error happend while fetching categories: ", error);
+  }
+}
 
 export default async function Home() {
+  const categories: ICategoryData[] | undefined = await fetchCategories();
+
   return (
     <div
       className={`min-h-screen dark:bg-gray-900 dark:text-white bg-gray-100 text-gray-800 pb-12 relative z-0 transition-colors duration-300`}
@@ -24,7 +54,7 @@ export default async function Home() {
           <h1
             className={`text-5xl md:text-7xl font-bold text-white mb-6 transition-colors duration-300`}
           >
-            Discover Your Style
+            Discover Your Desire
           </h1>
           <p
             className={`text-lg md:text-xl dark:text-gray-300 text-gray-200 mb-10 transition-colors duration-300`}
@@ -46,69 +76,96 @@ export default async function Home() {
       </section>
 
       {/* Featured Categories */}
-      <section className="container mx-auto px-4 py-16">
-        <h2
-          className={`text-3xl font-bold text-center mb-12 dark:text-gray-100 text-gray-800 transition-colors duration-300`}
-        >
-          Featured Categories
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Link
-            href="/category/clothing"
-            className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+      {categories && categories?.length > 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <h2
+            className={`text-3xl font-bold text-center mb-12 dark:text-gray-100 text-gray-800 transition-colors duration-300`}
           >
-            <div className="relative">
-              <Image
-                src={clothes}
-                alt="Clothing"
-                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
-              />
-              <div
-                className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
-              ></div>
-              <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
-                Clothing
-              </h3>
-            </div>
-          </Link>
-          <Link
-            href="/category/accessories"
-            className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
-          >
-            <div className="relative">
-              <Image
-                src={accessories}
-                alt="Accessories"
-                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
-              />
-              <div
-                className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
-              ></div>
-              <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
-                Accessories
-              </h3>
-            </div>
-          </Link>
-          <Link
-            href="/category/shoes"
-            className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
-          >
-            <div className="relative">
-              <Image
-                src={shoes}
-                alt="Shoes"
-                className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
-              />
-              <div
-                className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
-              ></div>
-              <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
-                Shoes
-              </h3>
-            </div>
-          </Link>
-        </div>
-      </section>
+            Featured Categories
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {categories &&
+              categories.length > 0 &&
+              categories.map((category) => (
+                <Link
+                  key={category.id}
+                  href={`/shop?category=${category.name.toLowerCase()}`}
+                  className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+                >
+                  <div className="relative">
+                    <Image
+                      src={category.image || defaultImage}
+                      width={600}
+                      height={600}
+                      alt="Clothing"
+                      className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
+                    />
+                    <div
+                      className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
+                    ></div>
+                    <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
+                      {category.name}
+                    </h3>
+                  </div>
+                </Link>
+              ))}
+            {/* <Link
+              href="/shop?category="
+              className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+            >
+              <div className="relative">
+                <Image
+                  src={clothes}
+                  alt="Clothing"
+                  className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
+                />
+                <div
+                  className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
+                ></div>
+                <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
+                  Clothing
+                </h3>
+              </div>
+            </Link> */}
+            {/* <Link
+              href="/shop?category="
+              className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+            >
+              <div className="relative">
+                <Image
+                  src={accessories}
+                  alt="Accessories"
+                  className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
+                />
+                <div
+                  className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
+                ></div>
+                <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
+                  Accessories
+                </h3>
+              </div>
+            </Link>
+            <Link
+              href="/shop?category="
+              className="overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-shadow"
+            >
+              <div className="relative">
+                <Image
+                  src={shoes}
+                  alt="Shoes"
+                  className="w-full h-64 object-cover transition-transform duration-300 hover:scale-110"
+                />
+                <div
+                  className={`absolute inset-0 dark:bg-gray-900 bg-black opacity-20 transition-colors duration-300`}
+                ></div>
+                <h3 className="absolute bottom-4 left-4 text-white text-xl font-semibold">
+                  Shoes
+                </h3>
+              </div>
+            </Link> */}
+          </div>
+        </section>
+      )}
 
       {/* Infinite Slider Section */}
       <section
