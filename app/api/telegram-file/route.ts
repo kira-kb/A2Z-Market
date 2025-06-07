@@ -13,6 +13,9 @@ export async function GET(req: NextRequest) {
   if (!fileId)
     return NextResponse.json({ msg: "Missing fileId" }, { status: 400 });
 
+  if (!botToken)
+    return NextResponse.json({ msg: "Missing bot token" }, { status: 400 });
+
   const localPath = join(cacheDir, `${fileId}.jpg`);
 
   try {
