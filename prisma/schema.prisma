@@ -106,3 +106,11 @@ model OrderItem {
   quantity  Int
   price     Float // Price at the time of purchase
 }
+
+model Subscription {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  notification Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

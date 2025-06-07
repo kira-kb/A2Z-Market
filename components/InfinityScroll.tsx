@@ -17,7 +17,7 @@ export function InfiniteSliderHoverSpeed() {
   const [reverse, setReverse] = useState(false);
 
   useEffect(() => {
-    if (!trendingItems) fetchData();
+    if (!trendingItems) fetchData({});
   }, [fetchData, trendingItems]);
 
   if (isLoadding) return <LoadingAnimation />;

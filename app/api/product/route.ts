@@ -5,6 +5,7 @@ import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
 import prisma from "@/lib/prisma";
 // import { Prisma } from "@prisma/client";
 import { Prisma } from "@/prisma/lib/generatedPrismaClient";
+import { sendEmailToSubscribers } from "@/lib/sendEmailToSubscribers";
 
 const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
 const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
@@ -221,21 +222,21 @@ export async function POST(req: NextRequest) {
       ? type
       : undefined;
 
-    const productPost = {
-      name,
-      description,
-      price,
-      categoryName: category,
-      subCategory: subCategories,
-      brands,
-      type: types,
-      conditions,
-      image: photoLinks.filter((link): link is string => !!link),
-    };
+    // const productPost = {
+    //   name,
+    //   description,
+    //   price,
+    //   categoryName: category,
+    //   subCategory: subCategories,
+    //   brands,
+    //   type: types,
+    //   conditions,
+    //   image: photoLinks.filter((link): link is string => !!link),
+    // };
 
-    console.log("product data: **  ", productPost);
+    // console.log("product data: **  ", productPost);
 
-    await prisma.product.create({
+    const uploadedProduct = await prisma.product.create({
       data: {
         name,
         description,
@@ -254,6 +255,21 @@ export async function POST(req: NextRequest) {
 
     // console.log("this are the pictures id:-  ", photoLinks.join("\n "));
     filePaths.forEach((path) => (path ? fs.rm(path) : null));
+
+    NextResponse.json(
+      { msg: "Files uploaded and sent to Telegram", paths: filePaths },
+      { status: 200 }
+    );
+
+    // const forwardedProto = req.headers.get("x-forwarded-proto");
+    // const host = req.headers.get("host");
+    // // const protocol = forwardedProto || "http"; // fallback to "http" if not available
+
+    // const theUrl = `https://${host}`;
+
+    // console.log("host: ", theUrl);
+
+    sendEmailToSubscribers(uploadedProduct);
 
     return NextResponse.json(
       { msg: "Files uploaded and sent to Telegram", paths: filePaths },

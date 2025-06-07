@@ -521,7 +521,7 @@ export const useDataStore = create<IData>((set, get) => ({
     if (subCategory) params.append("subCategory", subCategory);
     if (brands) params.append("brands", brands); // e.g. 'nike,addidas'
     if (condition) params.append("conditions", condition); // e.g. 'new'
-    if (id) params.append("id", id);
+    if (id) params.set("id", id);
 
     const response = await fetch(`/api/product?${params.toString()}`);
     // const response = await fetch(
