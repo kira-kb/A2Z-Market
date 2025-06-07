@@ -16,7 +16,7 @@ export function AppCarousel() {
   const { latestProducts, isLoadding, fetchData } = useDataStore();
 
   useEffect(() => {
-    fetchData();
+    fetchData({});
   }, [fetchData]);
 
   if (isLoadding) return <LoadingAnimation />;
