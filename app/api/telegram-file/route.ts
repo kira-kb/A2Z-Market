@@ -4,7 +4,8 @@ import fs from "fs/promises";
 import { existsSync, createReadStream } from "fs";
 import { join } from "path";
 
-const botToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN!;
+// const botToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN!;
+const botToken = "7504862704:AAHTkgIoutabgSO_RReCwfvi9k3UsPxptMg";
 const cacheDir = join(process.cwd(), "public", "telegram-cache");
 const fallbackImagePath = join(process.cwd(), "public", "favicon.png");
 
