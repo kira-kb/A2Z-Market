@@ -9,19 +9,40 @@ import { useEffect, useState } from "react";
 
 import { useDataStore } from "@/store";
 import LoadingAnimation from "../loading";
-// import CategoryFilter from "@/components/subItemSelector";
+import { useSearchParams } from "next/navigation";
 
 function Shop() {
   const [flow, setFlow] = useState<"flex" | "grid">("grid");
 
   const { data, isLoadding, fetchData } = useDataStore();
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const searchParams = useSearchParams();
 
-  // console.log(data);
-  // return <CategoryFilter />;
+  const category = searchParams.get("category") || "";
+  const subCategory = searchParams.get("subCategory") || "";
+  const type = searchParams.get("types") || "";
+  const price = searchParams.get("price") || ""; // You can split it by ","
+  const brands = searchParams.get("brands") || ""; // You can split it by ","
+  const condition = searchParams.get("condition") || "";
+  const name = searchParams.get("query") || "";
+  // const page = searchParams.get("page") || '';
+
+  useEffect(() => {
+    const prc = price?.split(",");
+    const maxPrice = +prc[1];
+    const minPrice = +prc[0];
+    // const maxPrice = +prc[0] > +prc[1] ? +prc[0] : +prc[1];
+    // const minPrice = +prc[0] < +prc[1] ? +prc[0] : +prc[1];
+    fetchData({
+      name,
+      category,
+      subCategory,
+      type,
+      price: { maxPrice, minPrice },
+      brands,
+      condition,
+    });
+  }, [fetchData, category, subCategory, type, price, brands, condition, name]);
 
   return (
     <SidebarProvider>
@@ -70,6 +91,7 @@ function Shop() {
                 price={item.price}
                 description={item.description}
                 image={item.image[0]}
+                product={item}
               />
             ))}
           </div>

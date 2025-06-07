@@ -12,7 +12,7 @@ import {
 } from "./ui/sidebar";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Label } from "./ui/label";
-import { DoubleSlider } from "./slider";
+import { PriceRangeInput } from "./slider";
 import MultipleSelector from "./ui/multiple-selector";
 import { useEffect, useState } from "react";
 import CategoryFilter from "./categoryFilter";
@@ -88,8 +88,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     types: [],
   });
   const [selector, setSelector] = useState<string[]>([]);
+  const [multiple, setMultiple] = useState<string[]>([]);
   const [radio, setRadio] = useState("");
-  const [slider, setSlider] = useState<[number, number]>([10, 1000]);
+  const [slider, setSlider] = useState<[number, number]>([0, 0]);
 
   // const [searchParams, setSearchParams] = useState({});
 
@@ -102,20 +103,73 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   // console.log("search param: **  ", searchParams);
 
   const router = useRouter();
+  //  && category.category != "Multiple"
+
+  // category.category == "Multiple" ? category=${multiple}& : category.category && category.category != "no value" ? `category=${category.category}&` : ""`
+
+  // const handleFiltterClick = () => {
+  //   const generateQueryString = `?${search ? `search=${search}&` : ""}${
+  //     category.category == "Multiple"
+  //       ? `category=${multiple}&`
+  //       : category.category && category.category != "no value"
+  //         ? `category=${category.category}&`
+  //         : ""
+  //   }
+  //     ${category.subCategory ? `subCategory=${category.subCategory}&` : ""}${
+  //       category.types.length ? `types=${category.types.join(",")}&` : ""
+  //     }${slider.length ? `price=${slider.join(",")}&` : ""}${
+  //       selector.length ? `brands=${selector.join(",")}&` : ""
+  //     }${radio ? `condition=${radio}` : ""}`;
+  //   // const generateQueryString = `?${search ? `search=${search}&` : ""}${
+  //   //   category.category && category.category != "no value"
+  //   //     ? `category=${category.category}&`
+  //   //     : ""
+  //   // }${category.subCategory ? `subCategory=${category.subCategory}&` : ""}${
+  //   //   category.types.length ? `types=${category.types.join(",")}&` : ""
+  //   // }${slider.length ? `price=${slider.join(",")}&` : ""}${
+  //   //   selector.length ? `brands=${selector.join(",")}&` : ""
+  //   // }${radio ? `condition=${radio}` : ""}`;
+
+  //   const queryString =
+  //     generateQueryString.at(-1) === "&"
+  //       ? generateQueryString.slice(0, -1)
+  //       : generateQueryString;
+
+  //   router.push(queryString);
+  // };
 
   const handleFiltterClick = () => {
-    const generateQueryString = `?${search ? `query=${search}&` : ""}${
-      category.category ? `category=${category.category}&` : ""
-    }${category.subCategory ? `subCategory=${category.subCategory}&` : ""}${
-      category.types.length ? `types=${category.types.join(",")}&` : ""
-    }${slider.length ? `price=${slider.join(",")}&` : ""}${
-      selector.length ? `brands=${selector.join(",")}&` : ""
-    }${radio ? `condition=${radio}` : ""}`;
+    const queryParams = [];
 
-    const queryString =
-      generateQueryString.at(-1) === "&"
-        ? generateQueryString.slice(0, -1)
-        : generateQueryString;
+    if (search) queryParams.push(`search=${search}`);
+
+    if (category.category === "Multiple" && multiple) {
+      queryParams.push(`category=${multiple}`);
+    } else if (category.category && category.category !== "no value") {
+      queryParams.push(`category=${category.category}`);
+    }
+
+    if (category.subCategory) {
+      queryParams.push(`subCategory=${category.subCategory}`);
+    }
+
+    if (category.types.length) {
+      queryParams.push(`types=${category.types.join(",")}`);
+    }
+
+    if (slider.length) {
+      if(slider[1] > 0) queryParams.push(`price=${slider.join(",")}`);
+    }
+
+    if (selector.length) {
+      queryParams.push(`brands=${selector.join(",")}`);
+    }
+
+    if (radio) {
+      queryParams.push(`condition=${radio}`);
+    }
+
+    const queryString = queryParams.length ? `?${queryParams.join("&")}` : "";
 
     router.push(queryString);
   };
@@ -175,17 +229,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Filter by Brands */}
-        {selectedCategory?.brands && (
+        {/* Filter by multiple Categoriey */}
+        {category.category == "Multiple" && (
           <SidebarGroup>
-            <SidebarGroupLabel>Brands</SidebarGroupLabel>
+            <SidebarGroupLabel>Categories</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <div className="w-full">
                   <MultipleSelector
-                    options={selectedCategory.brands}
-                    placeholder="Select Brands..."
-                    onChange={(e) => setSelector(e.map((item) => item.value))}
+                    options={categories.map((cat) => ({
+                      label: cat.name,
+                      value: cat.name,
+                    }))}
+                    placeholder="Select Categories..."
+                    onChange={(e) => setMultiple(e.map((item) => item.value))}
                   />
                 </div>
               </SidebarMenu>
@@ -193,15 +250,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroup>
         )}
 
+        {/* Filter by Brands */}
+        {selectedCategory?.brands &&
+          selectedCategory?.brands.length > 0 &&
+          selectedCategory?.brands && (
+            <SidebarGroup>
+              <SidebarGroupLabel>Brands</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <div className="w-full">
+                    <MultipleSelector
+                      options={selectedCategory.brands}
+                      placeholder="Select Brands..."
+                      onChange={(e) => setSelector(e.map((item) => item.value))}
+                    />
+                  </div>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
+
         {/* Filter by Price Range */}
         <SidebarGroup>
           <SidebarGroupLabel>Price Range</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <DoubleSlider
-                min={10}
-                max={1000}
-                step={10}
+              <PriceRangeInput
+                // min={1}
+                // max={10000}
+                // step={10}
                 values={slider}
                 setValues={setSlider}
               />
@@ -210,41 +287,43 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
 
         {/* Filter by Condition */}
-        {selectedCategory?.conditions && (
-          <SidebarGroup className="mb-20">
-            <SidebarGroupLabel>Condition</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <div>
-                    <RadioGroup
-                      defaultValue="comfortable"
-                      value={radio}
-                      onValueChange={(e) => setRadio(e)}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="" id="r1" />
-                        <Label htmlFor="r1">All</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="new" id="r2" />
-                        <Label htmlFor="r2">Brand new</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Refurbished" id="r3" />
-                        <Label htmlFor="r3">Refurbished</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="used" id="r4" />
-                        <Label htmlFor="r4">Used</Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
+        {selectedCategory?.conditions &&
+          selectedCategory?.conditions.length > 0 &&
+          selectedCategory?.conditions && (
+            <SidebarGroup className="mb-20">
+              <SidebarGroupLabel>Condition</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <div>
+                      <RadioGroup
+                        defaultValue="comfortable"
+                        value={radio}
+                        onValueChange={(e) => setRadio(e)}
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="" id="r1" />
+                          <Label htmlFor="r1">All</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="new" id="r2" />
+                          <Label htmlFor="r2">Brand new</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="Refurbished" id="r3" />
+                          <Label htmlFor="r3">Refurbished</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="used" id="r4" />
+                          <Label htmlFor="r4">Used</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
       </SidebarContent>
     </Sidebar>
   );

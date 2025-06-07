@@ -175,7 +175,7 @@ function AdminProductsPage() {
   const [currentProductId, setCurrentProductId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
+    fetchData({});
   }, [fetchData]);
 
   // console.log("data:  ", data);

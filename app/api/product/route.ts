@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
-import { join } from "path";
+import path, { join } from "path";
 import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
 import prisma from "@/lib/prisma";
 // import { Prisma } from "@prisma/client";
@@ -128,10 +128,12 @@ export async function POST(req: NextRequest) {
       price,
     });
 
-    const uploadDir = join(
-      "C:/Users/kirub/OneDrive/Desktop/code space/javascript/nextjs/Nextjs-projects/A2Z-Market-main/app/api/product",
-      "public"
-    );
+    // const uploadDir = join(
+    //   "C:/Users/kirub/OneDrive/Desktop/code space/javascript/nextjs/Nextjs-projects/A2Z-Market-main/app/api/product",
+    //   "public"
+    // );
+
+    const uploadDir = path.join(process.cwd(), "app/api/product/public");
 
     if (!telegramBotToken || !chatId) {
       return NextResponse.json(
@@ -284,6 +286,11 @@ export async function GET(req: NextRequest) {
     }
 
     const search = searchParams.get("search");
+    const category = searchParams
+      .get("category")
+      ?.split(",")
+      .map((s) => s.trim());
+
     const subCategory = searchParams
       .get("subCategory")
       ?.split(",")
@@ -313,27 +320,34 @@ export async function GET(req: NextRequest) {
     const filters: Prisma.ProductWhereInput = {};
 
     if (search) {
-      filters.OR = [
+      // filters.OR = [
+      filters.AND = [
         { name: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
         // { tags: { contains: search, mode: "insensitive" } },
       ];
     }
 
+    if (category?.length) {
+      filters.categories = {
+        some: { name: { in: category, mode: "insensitive" } },
+      };
+    }
+
     if (subCategory?.length) {
-      filters.subCategory = { in: subCategory };
+      filters.subCategory = { in: subCategory, mode: "insensitive" };
     }
 
     if (type?.length) {
-      filters.type = { in: type };
+      filters.type = { in: type, mode: "insensitive" };
     }
 
     if (brand?.length) {
-      filters.brands = { in: brand };
+      filters.brands = { in: brand, mode: "insensitive" };
     }
 
     if (condition?.length) {
-      filters.conditions = { in: condition };
+      filters.conditions = { in: condition, mode: "insensitive" };
     }
 
     if (minPrice || maxPrice) {

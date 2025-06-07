@@ -16,6 +16,20 @@ import Modal from "./modal";
 import Link from "next/link";
 import { useCartStore } from "@/store";
 
+interface IDataItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  image: string[];
+  categories: { name: string }[];
+  type: string;
+  subCategory: string;
+  brands: string;
+  conditions: string;
+}
+
 interface IProduct {
   layout?: "col" | "row";
   id: string;
@@ -23,6 +37,7 @@ interface IProduct {
   description: string;
   price: number;
   image: string;
+  product: IDataItem;
 }
 
 export default function ProductCard({
@@ -32,6 +47,7 @@ export default function ProductCard({
   description,
   price,
   image,
+  product,
 }: IProduct) {
   const [quantity, setQuantity] = useState(1);
   const { addCartItem } = useCartStore();
@@ -118,7 +134,17 @@ export default function ProductCard({
               variant="outline"
               size="icon"
               className="bg-primary hover:bg-primary/80 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-full p-1 w-7 h-7 sm:w-9 sm:h-9"
-              onClick={() => addCartItem({ id, name, price, image, quantity })}
+              onClick={() =>
+                addCartItem({
+                  id,
+                  name,
+                  price,
+                  image,
+                  quantity,
+                  productId: id,
+                  product,
+                })
+              }
             >
               <ShoppingBasket className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
             </Button>

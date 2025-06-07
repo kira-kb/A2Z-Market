@@ -43,13 +43,24 @@ interface LatestTrending {
 
 interface IData {
   data: IDataItem[];
+  singleProduct: IDataItem;
   latestProducts: LatestTrending[];
   trendingItems: LatestTrending[];
   isLoadding: boolean;
   isDeleting: boolean;
   isUpdating: boolean;
   isAdding: boolean;
-  fetchData: () => void;
+  fetchData: (searchParams: {
+    name?: string;
+    // price?: { maxPrice: number; minPrice: number }[];
+    price?: { maxPrice: number; minPrice: number };
+    category?: string;
+    type?: string;
+    subCategory?: string;
+    brands?: string;
+    condition?: string;
+    id?: string;
+  }) => void;
   addProduct: (data: {
     name: string;
     description: string;
@@ -133,19 +144,27 @@ interface CartItem {
   product: IDataItem;
 }
 
-interface ICart {
-  cartItems: CartItem[];
-  userId: string | null;
-  cartId: string | null;
-  setUserId: (id: string | null) => void;
-  addCartItem: (item: CartItem) => void;
-  removeCartItem: (id: string) => void;
-  increaseQuantity: (id: string) => void;
-  decreaseQuantity: (id: string) => void;
-  totalPrice: () => number;
-  syncLocalToServer: () => Promise<void>;
-  fetchServerCart: () => Promise<void>;
-}
+// interface AddCartItem {
+//   id: string;
+//   name: string;
+//   image: string;
+//   price: number;
+//   quantity: number;
+// }
+
+// interface ICart {
+//   cartItems: CartItem[];
+//   userId: string | null;
+//   cartId: string | null;
+//   setUserId: (id: string | null) => void;
+//   addCartItem: (item: AddCartItem) => void;
+//   removeCartItem: (id: string) => void;
+//   increaseQuantity: (id: string) => void;
+//   decreaseQuantity: (id: string) => void;
+//   totalPrice: () => number;
+//   syncLocalToServer: () => Promise<void>;
+//   fetchServerCart: () => Promise<void>;
+// }
 
 const sanitizeInput = (input: string) => {
   const regex = /^[a-zA-Z0-9 !@#$%&*()+\-\/"',|=]*$/; // Allowed characters
@@ -461,20 +480,69 @@ export const useDataStore = create<IData>((set, get) => ({
   data: [],
   latestProducts: [],
   trendingItems: [],
+  singleProduct: {
+    id: "",
+    name: "",
+    description: "",
+    price: 0,
+    stock: 0,
+    image: [],
+    categories: [],
+    type: "",
+    subCategory: "",
+    brands: "",
+    conditions: "",
+  },
 
   isLoadding: true,
   isAdding: false,
   isUpdating: false,
   isDeleting: false,
-  fetchData: async () => {
+  fetchData: async ({
+    name = "",
+    price = { minPrice: 0, maxPrice: 0 },
+    category = "",
+    type = "",
+    subCategory = "",
+    brands = "",
+    condition = "",
+    id = "",
+  } = {}) => {
     set({ isLoadding: true });
 
-    const response = await fetch("/api/product");
+    const params = new URLSearchParams();
+
+    if (name) params.append("name", name);
+    if (price?.maxPrice && price?.maxPrice > price?.minPrice)
+      params.append("maxPrice", `${price.maxPrice}`);
+    if (price?.minPrice > 0) params.append("minPrice", `${price.minPrice}`);
+    if (category) params.append("category", category);
+    if (type) params.append("type", type);
+    if (subCategory) params.append("subCategory", subCategory);
+    if (brands) params.append("brands", brands); // e.g. 'nike,addidas'
+    if (condition) params.append("conditions", condition); // e.g. 'new'
+    if (id) params.append("id", id);
+
+    const response = await fetch(`/api/product?${params.toString()}`);
+    // const response = await fetch(
+    //   `/api/product?name=${name}&maxPrice=${price.maxPrice}&minPrice=${price.minPrice}&categories=${category}&type=${type}&subCategory=${subCategory}&brands=${brands}&conditions=${condition}`
+    // );
+
+    if (id) {
+      const data: IDataItem = await response.json();
+      console.log("idataItem: ", data);
+
+      return set({
+        singleProduct: data,
+        isLoadding: false,
+      });
+    }
+
     const data: IDataItem[] = await response.json();
 
     // console.log("idataItem: ", data);
 
-    if (!data)
+    if (!data || !response.ok)
       return set({
         data: [],
         latestProducts: [],
@@ -482,19 +550,45 @@ export const useDataStore = create<IData>((set, get) => ({
         isLoadding: false,
       });
 
-    const latestProducts = data?.slice(0, 5).map((item) => {
-      return {
-        ...item,
-        image: typeof item.image === "string" ? item.image : item.image[0],
-      };
-    });
+    const latestProducts =
+      data.length < 5
+        ? data.map((item) => {
+            return {
+              ...item,
+              image:
+                typeof item.image === "string" ? item.image : item.image[0],
+            };
+          })
+        : data?.slice(0, 5).map((item) => {
+            return {
+              ...item,
+              image:
+                typeof item.image === "string" ? item.image : item.image[0],
+            };
+          });
 
-    const trendingItems = data?.slice(0, 20).map((item) => {
-      return {
-        ...item,
-        image: typeof item.image === "string" ? item.image : item.image[0],
-      };
-    });
+    // const trendingItems = data?.slice(0, 20).map((item) => {
+    //   return {
+    //     ...item,
+    //     image: typeof item.image === "string" ? item.image : item.image[0],
+    //   };
+    // });
+    const trendingItems =
+      data.length < 20
+        ? data.map((item) => {
+            return {
+              ...item,
+              image:
+                typeof item.image === "string" ? item.image : item.image[0],
+            };
+          })
+        : data?.slice(0, 20).map((item) => {
+            return {
+              ...item,
+              image:
+                typeof item.image === "string" ? item.image : item.image[0],
+            };
+          });
 
     set({
       data,
@@ -617,7 +711,7 @@ export const useDataStore = create<IData>((set, get) => ({
       // Handle response from the backend
       if (response.ok) {
         toast.success("Product added successfully");
-        get().fetchData();
+        get().fetchData({});
         // Optionally fetch updated data (like products list) here
       } else {
         toast.error("Error adding product");
@@ -757,7 +851,7 @@ export const useDataStore = create<IData>((set, get) => ({
 
       if (response.ok) {
         toast.success("Category updated successfully");
-        await get().fetchData(); // Refetch to update categories
+        await get().fetchData({}); // Refetch to update categories
       } else {
         console.log(await response.text());
         toast.error("Error updating category");
@@ -784,7 +878,7 @@ export const useDataStore = create<IData>((set, get) => ({
 
       if (response.ok) {
         toast.success("Product deleted successfully");
-        get().fetchData();
+        get().fetchData({});
       } else {
         toast.error("Error deleting Product");
       }

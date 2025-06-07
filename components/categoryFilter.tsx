@@ -57,6 +57,8 @@ const CategoryFilter: FC<ICategoryFilter> = ({
             <span>{category.category || "Select Category"}</span>
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="no value">---</SelectItem>
+            <SelectItem value="Multiple">Select Multiple Category</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.name} value={category.name}>
                 {category.name}
@@ -67,53 +69,60 @@ const CategoryFilter: FC<ICategoryFilter> = ({
       </div>
 
       {/* Subcategory Dropdown (if available) */}
-      {selectedCategoryData?.subCategories && (
-        <div>
-          <label className="block mb-2 text-sm font-medium">Subcategory</label>
-          <Select
-            onValueChange={(value) =>
-              setCategories((prev) => ({ ...prev, subCategory: value }))
-            }
-          >
-            <SelectTrigger className="w-full">
-              <span>{category.subCategory || "Select Subcategory"}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {selectedCategoryData.subCategories.map((subCat) => (
-                <SelectItem key={subCat} value={subCat}>
-                  {subCat}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      {selectedCategoryData?.subCategories &&
+        selectedCategoryData?.subCategories.length > 0 &&
+        selectedCategoryData?.subCategories && (
+          <div>
+            <label className="block mb-2 text-sm font-medium">
+              Subcategory
+            </label>
+            <Select
+              onValueChange={(value) =>
+                setCategories((prev) => ({ ...prev, subCategory: value }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <span>{category.subCategory || "Select Subcategory"}</span>
+              </SelectTrigger>
+              <SelectContent>
+                {selectedCategoryData.subCategories.map((subCat) => (
+                  <SelectItem key={subCat} value={subCat}>
+                    {subCat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
       {/* Types Filter (if available) */}
-      {selectedCategoryData?.type && (
-        <div>
-          <label className="block mb-2 text-sm font-medium flex-1 w-full mx-auto">
-            Types
-          </label>
-          <div className="flex flex-row flex-wrap justify-between gap-2">
-            {selectedCategoryData.type.map((type) => (
-              <div
-                key={type}
-                className="flex items-center border-b-[1px] border-gray-600 cursor-pointer"
-              >
-                <Checkbox
-                  id={type}
-                  checked={category.types.includes(type)}
-                  onCheckedChange={() => handleTypeChange(type)}
-                />
-                <label htmlFor={type} className="ml-2 text-sm cursor-pointer">
-                  {type}
-                </label>
-              </div>
-            ))}
+      {selectedCategoryData?.type &&
+        selectedCategoryData?.type.length > 0 &&
+        selectedCategoryData?.type[0].length > 0 &&
+        selectedCategoryData?.type && (
+          <div>
+            <label className="block mb-2 text-sm font-medium flex-1 w-full mx-auto">
+              Types
+            </label>
+            <div className="flex flex-row flex-wrap justify-between gap-2">
+              {selectedCategoryData.type.map((type) => (
+                <div
+                  key={type}
+                  className="flex items-center border-b-[1px] border-gray-600 cursor-pointer"
+                >
+                  <Checkbox
+                    id={type}
+                    checked={category.types.includes(type)}
+                    onCheckedChange={() => handleTypeChange(type)}
+                  />
+                  <label htmlFor={type} className="ml-2 text-sm cursor-pointer">
+                    {type}
+                  </label>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };

@@ -9,25 +9,56 @@ import { useCartStore, useDataStore } from "@/store";
 import LoadingAnimation from "@/app/loading";
 import { useParams } from "next/navigation";
 
+// interface IDataItem {
+//   id: string;
+//   name: string;
+//   description: string;
+//   price: number;
+//   stock: number;
+//   image: string[];
+//   categories: { name: string }[];
+//   type: string;
+//   subCategory: string;
+//   brands: string;
+//   conditions: string;
+// }
+
 const ProductDetailsPage: FC = () => {
-  const { data, fetchData, isLoadding } = useDataStore();
+  const { singleProduct: data, fetchData, isLoadding } = useDataStore();
   const { addCartItem } = useCartStore();
 
   // console.log(useParams().id);
 
-  const [renderData, setRenderData] = useState<{
-    id: string;
-    name: string;
-    price: number;
-    image: string[];
-    description: string;
-  }>({
-    id: "",
-    name: "",
-    price: 0,
-    image: [],
-    description: "",
-  });
+  // const [renderData, setRenderData] = useState<{
+  //   // id: string;
+  //   // name: string;
+  //   // price: number;
+  //   // image: string[];
+  //   // description: string;
+  //   id: string;
+  //   name: string;
+  //   description: string;
+  //   price: number;
+  //   stock: number;
+  //   image: string[];
+  //   categories: { name: string }[];
+  //   type: string;
+  //   subCategory: string;
+  //   brands: string;
+  //   conditions: string;
+  // }>({
+  //   id: "",
+  //   name: "",
+  //   price: 0,
+  //   image: [],
+  //   stock: 0,
+  //   description: "",
+  //   categories: [],
+  //   type: "",
+  //   subCategory: "",
+  //   brands: "",
+  //   conditions: "",
+  // });
 
   const [bigImg, setBigImg] = useState("");
 
@@ -35,23 +66,33 @@ const ProductDetailsPage: FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      await fetchData();
+      await fetchData({ id: `${id}` });
       if (!id) return;
-      const product = data.find((item) => +item.id === +id || item.id == id);
+      // const product = data.find((item) => +item.id === +id || item.id == id);
 
-      console.log("product, ", product);
-      if (product) {
-        setBigImg(product.image[0]);
-        setRenderData(product);
+      console.log("product, ", data);
+      if (data) {
+        setBigImg(data?.image[0]);
+        // setRenderData(data[0]);
       }
     };
     loadData();
-  });
+  }, [id]);
+
+  // console.log("render data: ", renderData);
 
   if (isLoadding)
     return (
       <div className="flex items-center justify-center h-screen w-screen">
         <LoadingAnimation />
+      </div>
+    );
+
+  if (!data && !isLoadding)
+    return (
+      <div>
+        opps, something went wrong, we couldn&apos;t find the product sorry 😔,
+        refresh the page!
       </div>
     );
 
@@ -63,19 +104,20 @@ const ProductDetailsPage: FC = () => {
           <div className="flex-1 flex items-center justify-center">
             <Image
               src={`/api/telegram-file?fileId=${bigImg || gen}`}
-              alt={renderData.name}
+              alt={data.name}
               width={300}
               height={400}
               className="rounded-lg object-contain"
+              priority={true}
             />
           </div>
 
           <div className="flex space-x-2">
-            {renderData.image.map((img) => (
+            {data.image.map((img) => (
               <Image
                 key={img}
                 src={`/api/telegram-file?fileId=${img || gen}`}
-                alt={renderData.name}
+                alt={data.name}
                 onClick={() => setBigImg(img)}
                 width={60}
                 height={60}
@@ -87,9 +129,9 @@ const ProductDetailsPage: FC = () => {
 
         {/* Product Details Section */}
         <div className="w-96">
-          <h1 className="text-2xl font-bold mb-2">{renderData.name}</h1>
+          <h1 className="text-2xl font-bold mb-2">{data.name}</h1>
           <p className="text-xl text-gray-700 mb-2">
-            ${renderData.price} <span className="line-through"></span>
+            ${data.price} <span className="line-through"></span>
           </p>
           {/* <p className="text-sm text-gray-500 mb-4">
             Shipping Speed to Delivery. EMIs from $100/month. Bank Offer: Extra
@@ -98,7 +140,7 @@ const ProductDetailsPage: FC = () => {
           <Card className="mb-4">
             <CardContent>
               <ul className="text-sm list-disc list-inside text-gray-600">
-                {renderData.description}
+                {data.description}
               </ul>
             </CardContent>
           </Card>
@@ -107,11 +149,13 @@ const ProductDetailsPage: FC = () => {
             className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold"
             onClick={() =>
               addCartItem({
-                id: renderData.id,
-                name: renderData.name,
-                price: renderData.price,
-                image: renderData.image[0],
+                id: data.id,
+                name: data.name,
+                price: data.price,
+                image: data.image[0],
                 quantity: 1,
+                productId: data.id,
+                product: data,
               })
             }
           >
