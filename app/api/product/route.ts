@@ -8,6 +8,12 @@ import { Prisma } from "@/prisma/lib/generatedPrismaClient";
 import { sendEmailToSubscribers } from "@/lib/sendEmailToSubscribers";
 import { Readable } from "stream";
 
+// import { Readable } from "stream";
+
+interface TelegramUploadStream extends Readable {
+  path: string;
+}
+
 const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
 const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
 
@@ -107,6 +113,8 @@ export async function POST(req: NextRequest) {
       price,
     });
 
+    // ????????????????????????????????????????????????????????????????????????/
+
     // // Create InputMediaPhoto[] using streams instead of file paths
     // const preparedMedia: InputMediaPhoto[] = await Promise.all(
     //   files.map(async (file, index) => {
@@ -123,21 +131,43 @@ export async function POST(req: NextRequest) {
     //     };
     //   })
     // );
+
+    // ????????????????????????????????????????????????????????????????????????/
+
+    // const preparedMedia: InputMediaPhoto[] = await Promise.all(
+    //   files.map(async (file, index) => {
+    //     const bytes = await file.arrayBuffer();
+    //     const buffer = Buffer.from(bytes);
+    //     const stream = Readable.from(buffer);
+    //     (stream as any).path = file.name; // Needed by Telegram API
+
+    //     const photo = {
+    //       type: "photo",
+    //       media: stream,
+    //       caption: index === 0 ? caption : "",
+    //       parse_mode: "HTML",
+    //     };
+
+    //     return photo as unknown as InputMediaPhoto;
+    //   })
+    // );
+
+    // ????????????????????????????????????????????????????????????????????????/
+
     const preparedMedia: InputMediaPhoto[] = await Promise.all(
       files.map(async (file, index) => {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const stream = Readable.from(buffer);
-        (stream as any).path = file.name; // Needed by Telegram API
 
-        const photo = {
+        const stream = Readable.from(buffer) as TelegramUploadStream;
+        stream.path = file.name; // Add file name for Telegram API
+
+        return {
           type: "photo",
           media: stream,
           caption: index === 0 ? caption : "",
           parse_mode: "HTML",
-        };
-
-        return photo as unknown as InputMediaPhoto;
+        } as unknown as InputMediaPhoto;
       })
     );
 
