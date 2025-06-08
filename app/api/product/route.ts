@@ -70,6 +70,14 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 
 export async function POST(req: NextRequest) {
   try {
+    if (!telegramBotToken) {
+      console.error("telegram bot token missing!!! ");
+      return NextResponse.json(
+        { msg: "telegram bot token not provided" },
+        { status: 403 }
+      );
+    }
+
     const data = await req.formData();
     const files = data.getAll("file") as File[];
 
