@@ -14,8 +14,8 @@ interface TelegramUploadStream extends Readable {
   path: string;
 }
 
-const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
-const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
+let telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
+let chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
 
 const bot = new TelegramBot(telegramBotToken, { polling: false });
 
@@ -71,11 +71,16 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 export async function POST(req: NextRequest) {
   try {
     if (!telegramBotToken) {
-      console.error("telegram bot token missing!!! ");
-      return NextResponse.json(
-        { msg: "telegram bot token not provided" },
-        { status: 403 }
-      );
+      telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
+      chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
+
+      if (!telegramBotToken) {
+        console.error("telegram bot token missing!!! ");
+        return NextResponse.json(
+          { msg: "telegram bot token not provided" },
+          { status: 403 }
+        );
+      }
     }
 
     const data = await req.formData();
