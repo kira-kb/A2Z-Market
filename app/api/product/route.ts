@@ -57,33 +57,9 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 <b>💰 PRICE:</b> ${price} Birr`;
 };
 
-// import { NextRequest, NextResponse } from "next/server";
-// import { Readable } from "stream";
-// import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
-// import prisma from "@/lib/prisma"; // adjust this path based on your project
-// import { buildCaption } from "@/lib/caption-builder"; // assume you have a separate util for caption
-// import { sendEmailToSubscribers } from "@/lib/email"; // assume you use this
-
-// const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN!;
-// const chatId = process.env.TELEGRAM_CHAT_ID!;
-// const bot = new TelegramBot(telegramBotToken, { polling: false });
-
 export async function POST(req: NextRequest) {
   try {
     if (!telegramBotToken) {
-      try {
-        const tokens = await prisma.tokens.create({
-          data: {
-            email: "kirubelbewket@gmail.com",
-            botToken: "7504862704:AAHTkgIoutabgSO_RReCwfvi9k3UsPxptMg",
-            chatId: "-1002298976277",
-          },
-        });
-
-        telegramBotToken = tokens.botToken;
-        chatId = tokens.chatId;
-      } catch (error) {
-        console.log(error);
         const tokens = await prisma.tokens.findUnique({
           where: {
             email: "kirubelbewket@gmail.com",
@@ -92,7 +68,6 @@ export async function POST(req: NextRequest) {
 
         telegramBotToken = tokens?.botToken || "";
         chatId = tokens?.chatId || "";
-      }
 
       if (!telegramBotToken) {
         console.error("telegram bot token missing!!! ");
