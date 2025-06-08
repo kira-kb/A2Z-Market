@@ -1421,6 +1421,7 @@ export const useUserStore = create<IUser>((set, get) => ({
         await get().fetchUsers();
         set({ isChangingPrevillage: false });
       } else {
+        console.log(await response.text());
         toast.error("Error changing User previllage");
         set({ isChangingPrevillage: false });
       }
