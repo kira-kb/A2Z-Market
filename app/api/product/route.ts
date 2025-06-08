@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs/promises";
-import path, { join } from "path";
+// import fs from "fs/promises";
+// import path, { join } from "path";
 import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
 import prisma from "@/lib/prisma";
 // import { Prisma } from "@prisma/client";
 import { Prisma } from "@/prisma/lib/generatedPrismaClient";
 import { sendEmailToSubscribers } from "@/lib/sendEmailToSubscribers";
+import { Readable } from "stream";
 
 const telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
 const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
@@ -50,6 +51,17 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 <b>💰 PRICE:</b> ${price} Birr`;
 };
 
+// import { NextRequest, NextResponse } from "next/server";
+// import { Readable } from "stream";
+// import TelegramBot, { InputMediaPhoto } from "node-telegram-bot-api";
+// import prisma from "@/lib/prisma"; // adjust this path based on your project
+// import { buildCaption } from "@/lib/caption-builder"; // assume you have a separate util for caption
+// import { sendEmailToSubscribers } from "@/lib/email"; // assume you use this
+
+// const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN!;
+// const chatId = process.env.TELEGRAM_CHAT_ID!;
+// const bot = new TelegramBot(telegramBotToken, { polling: false });
+
 export async function POST(req: NextRequest) {
   try {
     const data = await req.formData();
@@ -68,32 +80,6 @@ export async function POST(req: NextRequest) {
     const brand = data.get("brand") as string;
     const condition = data.get("condition") as string;
     const tags = data.get("tags") as string;
-    // const CategoryId = data.get("categoryId") as string;
-
-    // console.log(
-    //   "incomming data: ",
-    //   name,
-    //   description,
-    //   price,
-    //   type,
-    //   category,
-    //   subCategory,
-    //   brand,
-    //   condition,
-    //   tags
-    // );
-
-    //  TODO CHECKING CATEGORY
-    const categories = await prisma.category.findUnique({
-      where: { name: category },
-    });
-
-    // console.log("categories:  ", categories);
-
-    if (!categories) {
-      console.log("Category not found");
-      return NextResponse.json({ msg: "Category not found" }, { status: 404 });
-    }
 
     if (!name || !price || !category)
       return NextResponse.json(
@@ -101,21 +87,13 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
 
-    //     const buildCaption = (): string => {
-    //       return `
-    // <b>📦 PRODUCT NAME:</b> ${name}
-    // <b>🚩 CATEGORY:</b> ${category}${
-    //         subCategory ? `\n<b>🎟️ SUB-CATEGORY: </b>${subCategory}` : ""
-    //       }${brand ? `\n<b>🅱️ BRAND:</b> ${brand}` : ""}${
-    //         type ? `\n<b>🏷️ TYPE:</b> ${type}` : ""
-    //       }${condition ? `\n<b>☁️ CONDITION:</b> ${condition}` : ""}
+    const categories = await prisma.category.findUnique({
+      where: { name: category },
+    });
 
-    // <b>📝 DESCRIPTION:</b>
-    // 🔹 ${description}
-    // ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
-    // <b>📞 CONTACT US:</b> 0918443274
-    // <b>💰 PRICE:</b> ${price} Birr`;
-    //     };
+    if (!categories) {
+      return NextResponse.json({ msg: "Category not found" }, { status: 404 });
+    }
 
     const caption = buildCaption({
       name,
@@ -129,61 +107,41 @@ export async function POST(req: NextRequest) {
       price,
     });
 
-    // const uploadDir = join(
-    //   "C:/Users/kirub/OneDrive/Desktop/code space/javascript/nextjs/Nextjs-projects/A2Z-Market-main/app/api/product",
-    //   "public"
+    // // Create InputMediaPhoto[] using streams instead of file paths
+    // const preparedMedia: InputMediaPhoto[] = await Promise.all(
+    //   files.map(async (file, index) => {
+    //     const bytes = await file.arrayBuffer();
+    //     const buffer = Buffer.from(bytes);
+    //     const stream = Readable.from(buffer);
+    //     (stream as any).path = file.name; // required by Telegram to recognize the file type
+
+    //     return {
+    //       type: "photo",
+    //       media: stream,
+    //       caption: index === 0 ? caption : "",
+    //       parse_mode: "HTML",
+    //     };
+    //   })
     // );
-
-    const uploadDir = path.join(process.cwd(), "app/api/product/public");
-
-    if (!telegramBotToken || !chatId) {
-      return NextResponse.json(
-        { msg: "Missing Telegram credentials" },
-        { status: 500 }
-      );
-    }
-
-    // Ensure the directory exists
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const filePaths: string[] = [];
-
     const preparedMedia: InputMediaPhoto[] = await Promise.all(
       files.map(async (file, index) => {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
-        const filePath = join(uploadDir, file.name);
+        const stream = Readable.from(buffer);
+        (stream as any).path = file.name; // Needed by Telegram API
 
-        // Save file locally
-        await fs.writeFile(filePath, buffer);
-        filePaths.push(filePath);
-
-        return {
+        const photo = {
           type: "photo",
-          media: filePath,
+          media: stream,
           caption: index === 0 ? caption : "",
           parse_mode: "HTML",
-        } as InputMediaPhoto;
+        };
+
+        return photo as unknown as InputMediaPhoto;
       })
     );
 
-    // const bot = new TelegramBot(telegramBotToken, { polling: false });
-
-    // Send multiple images to Telegram
     const mediaGroup = await bot.sendMediaGroup(chatId, preparedMedia);
-
-    // TODO GETTING IMAGE PATH
-    // const photoLinks = await Promise.all(
-    //   mediaGroup.map(async (media) => {
-    //     // if (!media) return;
-    //     if (!media.photo) return;
-    //     const fileId = media.photo[media.photo.length - 1].file_id;
-    //     const file = await bot.getFile(fileId);
-    //     return `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
-    //   })
-    // );
-
-    // TODO GETTING IMAGE ID
 
     const photoLinks = await Promise.all(
       mediaGroup.map(async (media) =>
@@ -191,11 +149,7 @@ export async function POST(req: NextRequest) {
       )
     );
 
-    // TODO GETTING MESSAGE ID
-
-    const tgMsgId = await Promise.all(mediaGroup.map((msg) => msg.message_id));
-
-    // TODO SAVING PRODUCT WHITH IMAGES ID TO DATABASE
+    const tgMsgId = mediaGroup.map((msg) => msg.message_id);
 
     const subCategories = categories.subCategory
       ?.split(", ")
@@ -222,20 +176,6 @@ export async function POST(req: NextRequest) {
       ? type
       : undefined;
 
-    // const productPost = {
-    //   name,
-    //   description,
-    //   price,
-    //   categoryName: category,
-    //   subCategory: subCategories,
-    //   brands,
-    //   type: types,
-    //   conditions,
-    //   image: photoLinks.filter((link): link is string => !!link),
-    // };
-
-    // console.log("product data: **  ", productPost);
-
     const uploadedProduct = await prisma.product.create({
       data: {
         name,
@@ -253,26 +193,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // console.log("this are the pictures id:-  ", photoLinks.join("\n "));
-    filePaths.forEach((path) => (path ? fs.rm(path) : null));
-
     NextResponse.json(
-      { msg: "Files uploaded and sent to Telegram", paths: filePaths },
+      { msg: "Product uploaded and sent to Telegram successfully" },
       { status: 200 }
     );
 
-    // const forwardedProto = req.headers.get("x-forwarded-proto");
-    // const host = req.headers.get("host");
-    // // const protocol = forwardedProto || "http"; // fallback to "http" if not available
-
-    // const theUrl = `https://${host}`;
-
-    // console.log("host: ", theUrl);
-
-    sendEmailToSubscribers(uploadedProduct);
+    // Notify subscribers
+    await sendEmailToSubscribers(uploadedProduct);
 
     return NextResponse.json(
-      { msg: "Files uploaded and sent to Telegram", paths: filePaths },
+      { msg: "Product uploaded and sent to Telegram successfully" },
       { status: 200 }
     );
   } catch (error) {
@@ -280,6 +210,239 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ msg: "Internal Server Error" }, { status: 500 });
   }
 }
+
+// TODO THE FIRST POST WORKS USING FILE SYSTEM
+
+// export async function POST(req: NextRequest) {
+//   try {
+//     const data = await req.formData();
+//     const files = data.getAll("file") as File[];
+
+//     if (!files || files.length === 0) {
+//       return NextResponse.json({ msg: "No files uploaded" }, { status: 400 });
+//     }
+
+//     const name = data.get("name") as string;
+//     const description = data.get("description") as string;
+//     const price = parseFloat(data.get("price") as string);
+//     const type = data.get("type") as string;
+//     const category = data.get("category") as string;
+//     const subCategory = data.get("subCategory") as string;
+//     const brand = data.get("brand") as string;
+//     const condition = data.get("condition") as string;
+//     const tags = data.get("tags") as string;
+//     // const CategoryId = data.get("categoryId") as string;
+
+//     // console.log(
+//     //   "incomming data: ",
+//     //   name,
+//     //   description,
+//     //   price,
+//     //   type,
+//     //   category,
+//     //   subCategory,
+//     //   brand,
+//     //   condition,
+//     //   tags
+//     // );
+
+//     //  TODO CHECKING CATEGORY
+//     const categories = await prisma.category.findUnique({
+//       where: { name: category },
+//     });
+
+//     // console.log("categories:  ", categories);
+
+//     if (!categories) {
+//       console.log("Category not found");
+//       return NextResponse.json({ msg: "Category not found" }, { status: 404 });
+//     }
+
+//     if (!name || !price || !category)
+//       return NextResponse.json(
+//         { msg: "Missing required fields" },
+//         { status: 400 }
+//       );
+
+//     //     const buildCaption = (): string => {
+//     //       return `
+//     // <b>📦 PRODUCT NAME:</b> ${name}
+//     // <b>🚩 CATEGORY:</b> ${category}${
+//     //         subCategory ? `\n<b>🎟️ SUB-CATEGORY: </b>${subCategory}` : ""
+//     //       }${brand ? `\n<b>🅱️ BRAND:</b> ${brand}` : ""}${
+//     //         type ? `\n<b>🏷️ TYPE:</b> ${type}` : ""
+//     //       }${condition ? `\n<b>☁️ CONDITION:</b> ${condition}` : ""}
+
+//     // <b>📝 DESCRIPTION:</b>
+//     // 🔹 ${description}
+//     // ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
+//     // <b>📞 CONTACT US:</b> 0918443274
+//     // <b>💰 PRICE:</b> ${price} Birr`;
+//     //     };
+
+//     const caption = buildCaption({
+//       name,
+//       category,
+//       subCategory,
+//       brand,
+//       type,
+//       condition,
+//       description,
+//       tags,
+//       price,
+//     });
+
+//     // const uploadDir = join(
+//     //   "C:/Users/kirub/OneDrive/Desktop/code space/javascript/nextjs/Nextjs-projects/A2Z-Market-main/app/api/product",
+//     //   "public"
+//     // );
+
+//     const uploadDir = path.join(process.cwd(), "app/api/product/public");
+
+//     if (!telegramBotToken || !chatId) {
+//       return NextResponse.json(
+//         { msg: "Missing Telegram credentials" },
+//         { status: 500 }
+//       );
+//     }
+
+//     // Ensure the directory exists
+//     await fs.mkdir(uploadDir, { recursive: true });
+
+//     const filePaths: string[] = [];
+
+//     const preparedMedia: InputMediaPhoto[] = await Promise.all(
+//       files.map(async (file, index) => {
+//         const bytes = await file.arrayBuffer();
+//         const buffer = Buffer.from(bytes);
+//         const filePath = join(uploadDir, file.name);
+
+//         // Save file locally
+//         await fs.writeFile(filePath, buffer);
+//         filePaths.push(filePath);
+
+//         return {
+//           type: "photo",
+//           media: filePath,
+//           caption: index === 0 ? caption : "",
+//           parse_mode: "HTML",
+//         } as InputMediaPhoto;
+//       })
+//     );
+
+//     // const bot = new TelegramBot(telegramBotToken, { polling: false });
+
+//     // Send multiple images to Telegram
+//     const mediaGroup = await bot.sendMediaGroup(chatId, preparedMedia);
+
+//     // TODO GETTING IMAGE PATH
+//     // const photoLinks = await Promise.all(
+//     //   mediaGroup.map(async (media) => {
+//     //     // if (!media) return;
+//     //     if (!media.photo) return;
+//     //     const fileId = media.photo[media.photo.length - 1].file_id;
+//     //     const file = await bot.getFile(fileId);
+//     //     return `https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+//     //   })
+//     // );
+
+//     // TODO GETTING IMAGE ID
+
+//     const photoLinks = await Promise.all(
+//       mediaGroup.map(async (media) =>
+//         media.photo ? media.photo[media.photo.length - 1].file_id : null
+//       )
+//     );
+
+//     // TODO GETTING MESSAGE ID
+
+//     const tgMsgId = await Promise.all(mediaGroup.map((msg) => msg.message_id));
+
+//     // TODO SAVING PRODUCT WHITH IMAGES ID TO DATABASE
+
+//     const subCategories = categories.subCategory
+//       ?.split(", ")
+//       .map((sub) => sub.trim())
+//       .includes(subCategory)
+//       ? subCategory
+//       : undefined;
+//     const brands = categories.brands
+//       ?.split(", ")
+//       .map((brand) => brand.trim())
+//       .includes(brand)
+//       ? brand
+//       : undefined;
+//     const conditions = categories.conditions
+//       ?.split(", ")
+//       .map((cond) => cond.trim())
+//       .includes(condition)
+//       ? condition
+//       : undefined;
+//     const types = categories.type
+//       ?.split(", ")
+//       .map((t) => t.trim())
+//       .includes(type)
+//       ? type
+//       : undefined;
+
+//     // const productPost = {
+//     //   name,
+//     //   description,
+//     //   price,
+//     //   categoryName: category,
+//     //   subCategory: subCategories,
+//     //   brands,
+//     //   type: types,
+//     //   conditions,
+//     //   image: photoLinks.filter((link): link is string => !!link),
+//     // };
+
+//     // console.log("product data: **  ", productPost);
+
+//     const uploadedProduct = await prisma.product.create({
+//       data: {
+//         name,
+//         description,
+//         price,
+//         categories: {
+//           connect: { name: category },
+//         },
+//         subCategory: subCategories,
+//         brands,
+//         type: types,
+//         conditions,
+//         tgMsgId,
+//         image: photoLinks.filter((link): link is string => !!link),
+//       },
+//     });
+
+//     // console.log("this are the pictures id:-  ", photoLinks.join("\n "));
+//     filePaths.forEach((path) => (path ? fs.rm(path) : null));
+
+//     NextResponse.json(
+//       { msg: "Files uploaded and sent to Telegram", paths: filePaths },
+//       { status: 200 }
+//     );
+
+//     // const forwardedProto = req.headers.get("x-forwarded-proto");
+//     // const host = req.headers.get("host");
+//     // // const protocol = forwardedProto || "http"; // fallback to "http" if not available
+
+//     // const theUrl = `https://${host}`;
+
+//     // console.log("host: ", theUrl);
+
+//     sendEmailToSubscribers(uploadedProduct);
+
+//     return NextResponse.json(
+//       { msg: "Files uploaded and sent to Telegram", paths: filePaths },
+//       { status: 200 }
+//     );
+//   } catch (error) {
+//     console.error("Error uploading files:", error);
+//     return NextResponse.json({ msg: "Internal Server Error" }, { status: 500 });
+//   }
+// }
 
 // TODO GETTING PRODUCT
 
