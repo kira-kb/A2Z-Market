@@ -1,10 +1,9 @@
 // app/api/register-user/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // adjust this import to match your prisma client path
-import fs from "fs/promises";
-import path from "path";
+
 // import { currentUser } from "@clerk/nextjs/server";
-import adminList from "@/lib/adminList.json";
+// import adminList from "@/lib/adminList.json";
 
 export async function POST(req: Request) {
   try {
@@ -65,14 +64,14 @@ export async function GET() {
     // console.log("getting users");
     const users = await prisma.user.findMany();
     // console.log("users: ", users);
-    const allUsers = users.map((user) => {
-      if (adminList.some((admin) => admin.email == user.email)) {
-        return { ...user, isAdmin: true };
-      } else {
-        return { ...user, isAdmin: false };
-      }
-    });
-    return NextResponse.json(allUsers);
+    // const allUsers = users.map((user) => {
+    //   if (adminList.some((admin) => admin.email == user.email)) {
+    //     return { ...user, isAdmin: true };
+    //   } else {
+    //     return { ...user, isAdmin: false };
+    //   }
+    // });
+    return NextResponse.json(users);
   } catch (error) {
     console.error("Getting users error:", error);
     return NextResponse.json(
@@ -150,49 +149,61 @@ export async function PUT(req: Request) {
       return NextResponse.json({ msg: "Admin not found" }, { status: 404 });
     }
 
-    const isAuthorized = adminList.some((a) => a.email === admin.email);
+    // const isAuthorized = adminList.some((a) => a.email === admin.email);
 
-    if (!isAuthorized) {
+    if (!admin.isAdmin) {
       return NextResponse.json(
         { msg: "You are not authorized to perform this action" },
         { status: 403 }
       );
     }
 
+    const masterAdmin = "kirubelbewket@gmail.com";
+
     // Check if target user exists
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
 
-    if (!user || user.email !== userEmail) {
+    if (!user || user.email !== userEmail || user.email == masterAdmin) {
       return NextResponse.json(
         { msg: "User not found or email mismatch" },
         { status: 404 }
       );
     }
 
-    // Ensure master admin exists in list
-    const normalAdmin = "kirubelbewket@gmail.com";
-    const adminSet = new Set(adminList.map((admin) => admin.email));
-    adminSet.add(normalAdmin);
-
-    // Toggle admin privilege
-    if (adminSet.has(user.email)) {
-      adminSet.delete(user.email);
-    } else {
-      adminSet.add(user.email);
-    }
-
-    const newList = Array.from(adminSet).map((email) => ({ email }));
-
-    // Write updated admin list to file
-    const adminListPath = path.join(process.cwd(), "lib/adminList.json");
-    await fs.writeFile(adminListPath, JSON.stringify(newList, null, 2));
-
-    return NextResponse.json({
-      msg: "Admin privileges updated",
-      adminList: newList,
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        isAdmin: !user?.isAdmin,
+      },
     });
+
+    // // Ensure master admin exists in list
+    // const normalAdmin = "kirubelbewket@gmail.com";
+    // const adminSet = new Set(adminList.map((admin) => admin.email));
+    // adminSet.add(normalAdmin);
+
+    // // Toggle admin privilege
+    // if (adminSet.has(user.email)) {
+    //   adminSet.delete(user.email);
+    // } else {
+    //   adminSet.add(user.email);
+    // }
+
+    // const newList = Array.from(adminSet).map((email) => ({ email }));
+
+    // // Write updated admin list to file
+    // const adminListPath = path.join(process.cwd(), "lib/adminList.json");
+    // await fs.writeFile(adminListPath, JSON.stringify(newList, null, 2));
+
+    return NextResponse.json(
+      {
+        msg: "Admin privileges updated",
+        // adminList: newList,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Can't change user's privilege error:", error);
     return NextResponse.json(
