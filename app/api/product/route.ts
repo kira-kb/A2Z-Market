@@ -71,8 +71,28 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 export async function POST(req: NextRequest) {
   try {
     if (!telegramBotToken) {
-      telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
-      chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
+      try {
+        const tokens = await prisma.tokens.create({
+          data: {
+            email: "kirubelbewket@gmail.com",
+            botToken: "7504862704:AAHTkgIoutabgSO_RReCwfvi9k3UsPxptMg",
+            chatId: "-1002298976277",
+          },
+        });
+
+        telegramBotToken = tokens.botToken;
+        chatId = tokens.chatId;
+      } catch (error) {
+        console.log(error);
+        const tokens = await prisma.tokens.findUnique({
+          where: {
+            email: "kirubelbewket@gmail.com",
+          },
+        });
+
+        telegramBotToken = tokens?.botToken || "";
+        chatId = tokens?.chatId || "";
+      }
 
       if (!telegramBotToken) {
         console.error("telegram bot token missing!!! ");

@@ -198,6 +198,15 @@ exports.Prisma.SubscriptionScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.TokensScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  botToken: 'botToken',
+  chatId: 'chatId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -222,7 +231,8 @@ exports.Prisma.ModelName = {
   CartItem: 'CartItem',
   Order: 'Order',
   OrderItem: 'OrderItem',
-  Subscription: 'Subscription'
+  Subscription: 'Subscription',
+  Tokens: 'Tokens'
 };
 
 /**

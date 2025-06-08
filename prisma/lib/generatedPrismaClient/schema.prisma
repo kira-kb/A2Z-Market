@@ -115,3 +115,12 @@ model Subscription {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+model Tokens {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  botToken  String   @unique
+  chatId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
