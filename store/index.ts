@@ -714,10 +714,12 @@ export const useDataStore = create<IData>((set, get) => ({
         get().fetchData({});
         // Optionally fetch updated data (like products list) here
       } else {
+        console.log("error from uploadding product: ", await response.text());
         toast.error("Error adding product");
       }
     } catch (error) {
       toast.error("Server Error adding product");
+      console.log(error);
       console.error("Server Error adding product:", error);
     }
 
