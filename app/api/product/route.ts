@@ -14,8 +14,19 @@ interface TelegramUploadStream extends Readable {
   path: string;
 }
 
-let telegramBotToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN as string;
-let chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID as string;
+let telegramBotToken = process.env.TELEGRAM_BOT_TOKEN as string;
+let chatId = process.env.TELEGRAM_CHAT_ID as string;
+
+if (!telegramBotToken) {
+  const tokens = await prisma.tokens.findUnique({
+    where: {
+      email: "kirubelbewket@gmail.com",
+    },
+  });
+
+  telegramBotToken = tokens?.botToken || "";
+  chatId = tokens?.chatId || "";
+}
 
 const bot = new TelegramBot(telegramBotToken, { polling: false });
 
@@ -60,14 +71,14 @@ ${tags ? `<b>🏷️ TAGS:</b> ${tags}` : ""}
 export async function POST(req: NextRequest) {
   try {
     if (!telegramBotToken) {
-        const tokens = await prisma.tokens.findUnique({
-          where: {
-            email: "kirubelbewket@gmail.com",
-          },
-        });
+      const tokens = await prisma.tokens.findUnique({
+        where: {
+          email: "kirubelbewket@gmail.com",
+        },
+      });
 
-        telegramBotToken = tokens?.botToken || "";
-        chatId = tokens?.chatId || "";
+      telegramBotToken = tokens?.botToken || "";
+      chatId = tokens?.chatId || "";
 
       if (!telegramBotToken) {
         console.error("telegram bot token missing!!! ");
