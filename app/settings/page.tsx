@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 // import { Input } from "@/components/ui/input";
 // import { Button } from "@/components/ui/button";
@@ -12,25 +12,63 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
+import { useSubscriptionStore } from "@/store";
+import { LoadingButton } from "@/components/loaddingButton";
 
 const AccountSettingsPage = () => {
-  // Notification Preferences State
-  const [notifications, setNotifications] = useState({
-    emailNotifications: true,
-    // smsNotifications: false,
-  });
+  const { subscriber, getSubscriber, isLoading, updateSubscriber } =
+    useSubscriptionStore();
 
-  // Language Preference State
+  const user = useUser();
+  const userEmail = user.user?.emailAddresses[0].emailAddress;
+
+  // const { email, notification } = getSubscriber(userEmail || "");
+  const [notifications, setNotifications] = useState<boolean>(true);
+
+  const [buttonVisibility, setButtonVisibility] = useState(false);
+
   const [language, setLanguage] = useState("en");
+  // Language Preference State
 
-  const handleNotificationsChange = (
-    name: string,
-    checked: string | boolean
-  ) => {
-    // const { name, checked } = e.target;
-    setNotifications((prev) => ({ ...prev, [name]: checked }));
-  };
+  // console.log("user: ", user);
+  // console.log("user email: ", userEmail);
+
+  useEffect(() => {
+    console.log("use effect");
+    if (!userEmail) return;
+    const load = async () => {
+      await getSubscriber(userEmail);
+    };
+    load();
+  }, [userEmail, getSubscriber]);
+
+  useEffect(() => {
+    if (userEmail) {
+      getSubscriber(userEmail);
+    }
+  }, [userEmail, getSubscriber]);
+
+  useEffect(() => {
+    if (subscriber?.notification !== undefined) {
+      setNotifications(subscriber.notification);
+    }
+  }, [subscriber.notification]);
+
+  useEffect(() => {
+    if (notifications !== subscriber.notification) {
+      setButtonVisibility(true);
+    } else setButtonVisibility(false);
+  }, [notifications, subscriber.notification]);
+
+  // const handleNotificationsChange = (checked: boolean) => {
+  //   if (checked != notifications) setButtonVisibility(true);
+  //   else setButtonVisibility(false);
+  // };
+
+  // console.log("subscriber: ", subscriber.notification);
+  // console.log("notification: ", notifications);
+  // console.log("buttonVisibility: ", buttonVisibility);
 
   return (
     <div className="container mx-auto p-4">
@@ -119,10 +157,14 @@ const AccountSettingsPage = () => {
               <Checkbox
                 id="emailNotifications"
                 name="emailNotifications"
-                checked={notifications.emailNotifications}
-                onCheckedChange={(checked) =>
-                  handleNotificationsChange("emailNotifications", checked)
-                }
+                checked={notifications}
+                onCheckedChange={(checked: boolean) => {
+                  // handleNotificationsChange(checked);
+                  setNotifications(checked);
+                  if (checked != notifications) setButtonVisibility(true);
+                  else setButtonVisibility(false);
+                }}
+
                 // onCheckedChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 //   handleNotificationsChange(e)
                 // }
@@ -131,6 +173,17 @@ const AccountSettingsPage = () => {
                 // onChange={handleNotificationsChange}
               />
               <label htmlFor="emailNotifications">Email Notifications</label>
+              {buttonVisibility && (
+                <LoadingButton
+                  loading={isLoading}
+                  LoadingText="Updating..."
+                  onClick={() =>
+                    updateSubscriber(userEmail || "", notifications)
+                  }
+                >
+                  Update
+                </LoadingButton>
+              )}
             </div>
           </CardContent>
         </Card>

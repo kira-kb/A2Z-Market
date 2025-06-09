@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
   try {
-    const { email } = await req.json();
+    const { searchParams } = new URL(req.url);
+
+    const email = searchParams.get("email");
 
     if (!email) {
       return NextResponse.json({ msg: "Email is required" }, { status: 400 });
@@ -47,15 +49,21 @@ export async function PATCH(req: Request) {
   try {
     const { email, notification } = await req.json();
 
+    console.log(email, notification);
+
     if (!email) {
       return NextResponse.json({ msg: "Email is required" }, { status: 400 });
     }
 
-   if (!notification) return NextResponse.json({ msg: "Success" }, { status: 200 });
+    // if (!notification)
+    //   return NextResponse.json(
+    //     { msg: "Notification is required" },
+    //     { status: 400 }
+    //   );
 
     await prisma.subscription.update({
       where: { email },
-      data: {notification: !notification}
+      data: { notification: notification },
     });
 
     return NextResponse.json({ msg: "Success" }, { status: 200 });

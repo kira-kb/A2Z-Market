@@ -1608,19 +1608,22 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 }));
 
 interface ISubscription {
+  subscriber: {
+    email: string;
+    notification: boolean;
+  };
   isLoading: boolean;
   addSubscriber: (email: string) => Promise<void>;
-  getSubscriber: (email: string) => Promise<
-    | {
-        email: string;
-        notification: boolean;
-      }
-    | undefined
-  >;
+  getSubscriber: (email: string) => Promise<void>;
+  updateSubscriber: (email: string, notification: boolean) => Promise<void>;
 }
 
 export const useSubscriptionStore = create<ISubscription>((set) => ({
   isLoading: false,
+  subscriber: {
+    email: "",
+    notification: false,
+  },
   addSubscriber: async (email: string) => {
     set({
       isLoading: true,
@@ -1651,12 +1654,11 @@ export const useSubscriptionStore = create<ISubscription>((set) => ({
       isLoading: true,
     });
     try {
-      const response = await fetch("/api/subscribe", {
+      const response = await fetch(`/api/subscribe?email=${email}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
       });
 
       if (response.ok) {
@@ -1665,14 +1667,19 @@ export const useSubscriptionStore = create<ISubscription>((set) => ({
         // toast.success("Greate!, We will inform you on news");
         set({
           isLoading: false,
+          subscriber: {
+            email: data.email,
+            notification: data.notification,
+          },
         });
-        return data;
       }
+      set({
+        isLoading: false,
+      });
     } catch (error) {
       console.error(error);
       toast.error("Something went wrong, subscribing news");
       set({ isLoading: false });
-      return undefined;
     }
   },
   updateSubscriber: async (email: string, notification: boolean) => {
@@ -1689,7 +1696,7 @@ export const useSubscriptionStore = create<ISubscription>((set) => ({
       });
 
       if (response.ok) {
-        toast.success("Greate!, done");
+        toast.success("Ok!, done");
         set({
           isLoading: false,
         });
