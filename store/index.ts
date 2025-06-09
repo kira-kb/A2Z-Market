@@ -1607,6 +1607,101 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 }));
 
+interface ISubscription {
+  isLoading: boolean;
+  addSubscriber: (email: string) => Promise<void>;
+  getSubscriber: (email: string) => Promise<
+    | {
+        email: string;
+        notification: boolean;
+      }
+    | undefined
+  >;
+}
+
+export const useSubscriptionStore = create<ISubscription>((set) => ({
+  isLoading: false,
+  addSubscriber: async (email: string) => {
+    set({
+      isLoading: true,
+    });
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        toast.success("Greate!, We will inform you on news");
+        set({
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong, subscribing news");
+      set({ isLoading: false });
+    }
+  },
+  getSubscriber: async (email: string) => {
+    set({
+      isLoading: true,
+    });
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        const data: { email: string; notification: boolean } =
+          await response.json();
+        // toast.success("Greate!, We will inform you on news");
+        set({
+          isLoading: false,
+        });
+        return data;
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong, subscribing news");
+      set({ isLoading: false });
+      return undefined;
+    }
+  },
+  updateSubscriber: async (email: string, notification: boolean) => {
+    set({
+      isLoading: true,
+    });
+    try {
+      const response = await fetch("/api/subscribe", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, notification }),
+      });
+
+      if (response.ok) {
+        toast.success("Greate!, done");
+        set({
+          isLoading: false,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong, subscribing news");
+      set({ isLoading: false });
+    }
+  },
+}));
+
 // ??????????????????????????????????????????
 // ??????????????????????????????????????????
 // ??????????????????????????????????????????

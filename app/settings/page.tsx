@@ -15,37 +15,14 @@ import {
 import { UserButton } from "@clerk/nextjs";
 
 const AccountSettingsPage = () => {
-  // // Profile Information State
-  // const [profileInfo, setProfileInfo] = useState({
-  //   name: "",
-  //   email: "",
-  //   phone: "",
-  // });
-
-  // // Password Change State
-  // const [passwords, setPasswords] = useState({
-  //   currentPassword: "",
-  //   newPassword: "",
-  //   confirmPassword: "",
-  // });
-
   // Notification Preferences State
   const [notifications, setNotifications] = useState({
     emailNotifications: true,
-    smsNotifications: false,
+    // smsNotifications: false,
   });
 
   // Language Preference State
   const [language, setLanguage] = useState("en");
-
-  // Handlers
-  // const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setProfileInfo({ ...profileInfo, [e.target.name]: e.target.value });
-  // };
-
-  // const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setPasswords({ ...passwords, [e.target.name]: e.target.value });
-  // };
 
   const handleNotificationsChange = (
     name: string,
@@ -54,16 +31,6 @@ const AccountSettingsPage = () => {
     // const { name, checked } = e.target;
     setNotifications((prev) => ({ ...prev, [name]: checked }));
   };
-
-  // const handleProfileUpdate = () => {
-  //   // Submit profile changes
-  //   console.log("Profile Updated", profileInfo);
-  // };
-
-  // const handlePasswordUpdate = () => {
-  //   // Submit password changes
-  //   console.log("Password Updated", passwords);
-  // };
 
   return (
     <div className="container mx-auto p-4">

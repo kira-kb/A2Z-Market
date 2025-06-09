@@ -3,8 +3,22 @@ import TelegramBot from "node-telegram-bot-api";
 import fs from "fs/promises";
 import { existsSync, createReadStream } from "fs";
 import { join } from "path";
+import prisma from "@/lib/prisma";
 
-const botToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN!;
+let botToken: string | undefined = process.env.TELEGRAM_BOT_TOKEN;
+
+const checkToken = async () => {
+  if (!botToken)
+    botToken = await prisma.tokens
+      .findUnique({
+        where: { email: "kirubelbewket@gmail.com" },
+        select: { botToken: true },
+      })
+      .then((token) => token?.botToken);
+};
+
+checkToken();
+
 const cacheDir = join(process.cwd(), "public", "telegram-cache");
 const fallbackImagePath = join(process.cwd(), "public", "favicon.png");
 

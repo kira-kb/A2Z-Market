@@ -2,11 +2,12 @@ import { AppCarousel } from "@/components/carousel";
 import { InfiniteSliderHoverSpeed } from "@/components/InfinityScroll";
 import Link from "next/link";
 import Image from "next/image";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+// import { Input } from "@/components/ui/input";
+// import { Button } from "@/components/ui/button";
 import prisma from "@/lib/prisma";
 
 import defaultImage from "@/assets/images/default_categories.png";
+import Subscription from "@/components/subscription";
 // import { useCategoryStore } from "@/store";
 // import { useEffect } from "react";
 
@@ -183,7 +184,8 @@ export default async function Home() {
       <section
         className={`py-16 dark:bg-indigo-800 bg-purple-600 text-white transition-colors duration-300`}
       >
-        <div className="container mx-auto px-4 text-center">
+        <Subscription />
+        {/* <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6">Stay in the Loop</h2>
           <p className="mb-8">
             Sign up for our newsletter to get exclusive deals and the latest
@@ -199,7 +201,7 @@ export default async function Home() {
               <Button type="submit">Subscribe</Button>
             </div>
           </form>
-        </div>
+        </div> */}
       </section>
     </div>
   );

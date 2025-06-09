@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import prisma from "./prisma";
 // import { Product } from "@/types"; // optional, based on your type setup
 
 interface Product {
@@ -16,7 +17,15 @@ interface Product {
 
 // Replace with Prisma query in production
 const getAllEmails = async (): Promise<string[]> => {
-  return ["kirubelbewket@gmail.com"];
+  const subscribers = await prisma.subscription
+    .findMany({
+      where: { notification: true },
+      select: { email: true },
+    })
+    .then((subs) => subs.map((sub) => sub.email));
+
+  return subscribers;
+  // return ["kirubelbewket@gmail.com"];
 };
 
 // -----------------------------
