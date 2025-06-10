@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const localPath = join(cacheDir, `${fileId}.jpg`);
 
   try {
-    // 1. Return from cache if available
+    // ✅ 1. Try to serve from local cache
     if (existsSync(localPath)) {
       const stream = createReadStream(localPath);
       return new NextResponse(stream as unknown as ReadableStream<Uint8Array>, {
@@ -45,39 +45,54 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // 2. Try to fetch from Telegram once, with a retry fallback
-    const tryFetchImage = async (): Promise<Buffer> => {
+    // ✅ 2. Function to fetch and optionally cache the image
+    const fetchImageFromTelegram = async (): Promise<Buffer> => {
       const bot = new TelegramBot(botToken!, { polling: false });
-      const file = await bot.getFile(fileId);
+      const file = await bot.getFile(fileId!);
       const telegramUrl = `https://api.telegram.org/file/bot${botToken}/${file.file_path}`;
       const response = await fetch(telegramUrl);
-      if (!response.ok) throw new Error("Telegram fetch failed");
-      return Buffer.from(await response.arrayBuffer());
+      if (!response.ok) throw new Error("Failed to fetch Telegram image");
+      const buffer = Buffer.from(await response.arrayBuffer());
+
+      // Try to cache it but don’t block
+      try {
+        await fs.mkdir(cacheDir, { recursive: true });
+        await fs.writeFile(localPath, buffer);
+      } catch (err) {
+        console.warn("⚠️ Failed to write to cache:", err);
+      }
+
+      return buffer;
     };
 
-    let imageBuffer: Buffer;
+    // ✅ 3. First attempt
     try {
-      imageBuffer = await tryFetchImage();
+      const imageBuffer = await fetchImageFromTelegram();
+      return new NextResponse(imageBuffer, {
+        status: 200,
+        headers: {
+          "Content-Type": "image/jpeg",
+          "Cache-Control": "public, max-age=302400",
+        },
+      });
     } catch (err) {
-      console.error("Telegram image fetch error:", err);
-      console.warn("First Telegram fetch failed, retrying once...");
-      imageBuffer = await tryFetchImage(); // Retry once
+      console.error("❌ Telegram image fetch error:", err);
+      console.warn("⚠️ First Telegram fetch failed. Retrying...");
+      try {
+        const imageBuffer = await fetchImageFromTelegram();
+        return new NextResponse(imageBuffer, {
+          status: 200,
+          headers: {
+            "Content-Type": "image/jpeg",
+            "Cache-Control": "public, max-age=302400",
+          },
+        });
+      } catch (finalErr) {
+        console.error("❌ Telegram image final error:", finalErr);
+      }
     }
 
-    await fs.mkdir(cacheDir, { recursive: true });
-    await fs.writeFile(localPath, imageBuffer);
-
-    return new NextResponse(imageBuffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "image/jpeg",
-        "Cache-Control": "public, max-age=302400",
-      },
-    });
-  } catch (err) {
-    console.error("Telegram image final error:", err);
-
-    // 3. Fallback image
+    // ✅ 4. Fallback image as last resort
     const fallbackBuffer = await fs.readFile(fallbackImagePath);
     return new NextResponse(fallbackBuffer, {
       status: 200,
@@ -86,8 +101,105 @@ export async function GET(req: NextRequest) {
         "Cache-Control": "no-cache",
       },
     });
+  } catch (err) {
+    console.error("❌ Unexpected error:", err);
+    return NextResponse.json({ msg: "Server error" }, { status: 500 });
   }
 }
+
+// ??????????????????????????????????????????????????????????????
+// ??????????????????????????????????????????????????????????????
+
+// import { NextRequest, NextResponse } from "next/server";
+// import TelegramBot from "node-telegram-bot-api";
+// import fs from "fs/promises";
+// import { existsSync, createReadStream } from "fs";
+// import { join } from "path";
+// import prisma from "@/lib/prisma";
+
+// let botToken: string | undefined = process.env.TELEGRAM_BOT_TOKEN;
+
+// const checkToken = async () => {
+//   if (!botToken)
+//     botToken = await prisma.tokens
+//       .findUnique({
+//         where: { email: "kirubelbewket@gmail.com" },
+//         select: { botToken: true },
+//       })
+//       .then((token) => token?.botToken);
+// };
+
+// checkToken();
+
+// const cacheDir = join(process.cwd(), "public", "telegram-cache");
+// const fallbackImagePath = join(process.cwd(), "public", "favicon.png");
+
+// export async function GET(req: NextRequest) {
+//   const fileId = new URL(req.url).searchParams.get("fileId");
+//   if (!fileId)
+//     return NextResponse.json({ msg: "Missing fileId" }, { status: 400 });
+
+//   if (!botToken)
+//     return NextResponse.json({ msg: "Missing bot token" }, { status: 400 });
+
+//   const localPath = join(cacheDir, `${fileId}.jpg`);
+
+//   try {
+//     // 1. Return from cache if available
+//     if (existsSync(localPath)) {
+//       const stream = createReadStream(localPath);
+//       return new NextResponse(stream as unknown as ReadableStream<Uint8Array>, {
+//         status: 200,
+//         headers: {
+//           "Content-Type": "image/jpeg",
+//           "Cache-Control": "public, max-age=302400",
+//         },
+//       });
+//     }
+
+//     // 2. Try to fetch from Telegram once, with a retry fallback
+//     const tryFetchImage = async (): Promise<Buffer> => {
+//       const bot = new TelegramBot(botToken!, { polling: false });
+//       const file = await bot.getFile(fileId);
+//       const telegramUrl = `https://api.telegram.org/file/bot${botToken}/${file.file_path}`;
+//       const response = await fetch(telegramUrl);
+//       if (!response.ok) throw new Error("Telegram fetch failed");
+//       return Buffer.from(await response.arrayBuffer());
+//     };
+
+//     let imageBuffer: Buffer;
+//     try {
+//       imageBuffer = await tryFetchImage();
+//     } catch (err) {
+//       console.error("Telegram image fetch error:", err);
+//       console.warn("First Telegram fetch failed, retrying once...");
+//       imageBuffer = await tryFetchImage(); // Retry once
+//     }
+
+//     await fs.mkdir(cacheDir, { recursive: true });
+//     await fs.writeFile(localPath, imageBuffer);
+
+//     return new NextResponse(imageBuffer, {
+//       status: 200,
+//       headers: {
+//         "Content-Type": "image/jpeg",
+//         "Cache-Control": "public, max-age=302400",
+//       },
+//     });
+//   } catch (err) {
+//     console.error("Telegram image final error:", err);
+
+//     // 3. Fallback image
+//     const fallbackBuffer = await fs.readFile(fallbackImagePath);
+//     return new NextResponse(fallbackBuffer, {
+//       status: 200,
+//       headers: {
+//         "Content-Type": "image/png",
+//         "Cache-Control": "no-cache",
+//       },
+//     });
+//   }
+// }
 
 // ????????????????????????????????????????????????????????????????????
 // ????????????????????????????????????????????????????????????????????
