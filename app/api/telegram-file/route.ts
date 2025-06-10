@@ -20,7 +20,7 @@ const checkToken = async () => {
 checkToken();
 
 const cacheDir = join(process.cwd(), "public", "telegram-cache");
-const fallbackImagePath = join(process.cwd(), "public", "favicon.png");
+const fallbackImagePath = join(process.cwd(), "public", "fallbackImage.png");
 
 export async function GET(req: NextRequest) {
   const fileId = new URL(req.url).searchParams.get("fileId");
@@ -33,6 +33,13 @@ export async function GET(req: NextRequest) {
   const localPath = join(cacheDir, `${fileId}.jpg`);
 
   try {
+    if (!fileId || typeof fileId !== "string" || fileId.length < 20) {
+      console.warn("❌ Invalid fileId received:", fileId);
+      return NextResponse.json(
+        { msg: "Invalid or missing fileId" },
+        { status: 400 }
+      );
+    }
     // ✅ 1. Try to serve from local cache
     if (existsSync(localPath)) {
       const stream = createReadStream(localPath);
